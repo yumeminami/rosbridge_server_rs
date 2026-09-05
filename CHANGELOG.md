@@ -2,6 +2,17 @@
 
 Release history for rosbridge_server_rs.
 
+## 0.1.3 — 2026-09-06
+
+- Refresh the managed default TOML on version changes; preserve explicit --config files and same-version edits.
+
+- Add opt-in DEBUG service payload previews, capped at 4096 UTF-8 bytes.
+
+- Log service calls, responses and timeouts with client/request correlation and elapsed time.
+
+- Add CLI overrides for log directory, filter, timezone and ANSI styling.
+- Use plain console logs and local timestamps with explicit timezone offsets.
+
 ## 0.1.2 — 2026-09-06
 
 - Create and load ~/.rosbridge_server_rs/rosbridge.toml on first server startup, preserving existing files.

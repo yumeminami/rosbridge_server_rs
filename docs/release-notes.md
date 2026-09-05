@@ -1,31 +1,43 @@
-# rosbridge_server_rs 0.1.2
+# rosbridge_server_rs 0.1.3
 
-Adds automatic TOML configuration, forwarding allowlists and rotating file logs.
+Adds local-time logging, CLI log controls and bounded service payload debugging.
 
-- Creates and loads ~/.rosbridge_server_rs/rosbridge.toml on first startup,
-  including through uvx and uv-installed commands. Existing files are preserved.
-- Enforces topics_glob, topics_pub_glob, topics_sub_glob, services_glob and
-  params_glob on forwarding, with action transport checks and parameter-service
-  bypass protection. Omitted lists allow all; empty lists deny all.
-- Adds configurable file logging with daily/hourly rotation and retention.
-- Logs client connection counts, handshake metadata, session duration,
-  subscriptions and failed operations.
-- Includes a measured ARM64 SoC CPU/RSS comparison and visible README charts.
-- Continues to support Humble / Ubuntu 22.04 and Jazzy / Ubuntu 24.04,
-  on Linux x86_64 and ARM64, with architecture-selecting uv wheels.
+- Plain console logs by default, with local timestamps and explicit timezone offsets.
+- CLI overrides for log directory, filter, local/UTC timestamps and ANSI styling.
+- Service call, response and timeout logs with client/request IDs and elapsed time.
+- Opt-in DEBUG request/response previews, limited to 4096 UTF-8 bytes per entry.
+- Anonymized benchmark topic names and SoC details moved off the README homepage.
+- Humble / Ubuntu 22.04 and Jazzy / Ubuntu 24.04 packages for Linux x86_64 and ARM64.
 
-Configuration and forwarding changes are documented in docs/configuration.md.
-Topic/service globs now enforce access, rather than only filtering discovery.
-The common topics_glob list is added to both directional topic lists.
-When params_glob is set, use rosapi parameter methods instead of raw parameter
-services. Allow needed rosapi methods explicitly in services_glob.
+## Configuration upgrade
+
+**The default ~/.rosbridge_server_rs/rosbridge.toml is now a managed file.**
+First startup with a different version replaces it with the bundled defaults.
+Upgrading from v0.1.2 also replaces it because no version marker exists yet.
+Same-version restarts preserve edits.
+
+To retain your settings, copy them to another path before starting v0.1.3 and use:
+
+```bash
+rosbridge_server_rs --config /path/to/custom.toml
+```
+
+Explicit configuration files are never modified. New log defaults are local time,
+ANSI styling disabled, INFO level and no file output. File rotation still uses UTC.
+Enable service payload previews only when needed:
+
+```bash
+rosbridge_server_rs --log-level 'info,rosbridge_server_rs::service_payload=debug'
+```
+
+Previews are not redacted. INFO logs do not include payloads.
 
 ## Install
 
 With Humble or Jazzy installed, download the matching `.deb` and run:
 
 ```bash
-sudo apt install ./rosbridge-server-rs_0.1.2_jazzy_ubuntu24.04_amd64.deb
+sudo apt install ./rosbridge-server-rs_0.1.3_jazzy_ubuntu24.04_amd64.deb
 source /opt/ros/jazzy/setup.bash
 rosbridge_server_rs
 ```
@@ -37,8 +49,8 @@ Archives require the same external ROS runtime libraries. `SHA256SUMS` covers
 all release packages.
 
 Install from PyPI with
-`uv tool install rosbridge_server_rs==0.1.2`, then run `rosbridge_server_rs`, or use
-`uvx rosbridge_server_rs==0.1.2` directly. Source the ROS environment first. uv selects
+`uv tool install rosbridge_server_rs==0.1.3`, then run `rosbridge_server_rs`, or use
+`uvx rosbridge_server_rs==0.1.3` directly. Source the ROS environment first. uv selects
 the architecture, and the launcher selects the binary using `$ROS_DISTRO`.
 
 To upgrade an existing uv tool, run `uv tool upgrade rosbridge_server_rs`.

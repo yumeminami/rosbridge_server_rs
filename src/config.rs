@@ -39,6 +39,14 @@ struct Config {
     log: Log,
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize, clap::ValueEnum)]
+#[serde(rename_all = "lowercase")]
+pub enum Timezone {
+    #[default]
+    Local,
+    Utc,
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct Log {
@@ -47,6 +55,8 @@ pub struct Log {
     pub rotation: String,
     pub max_files: usize,
     pub console: bool,
+    pub timezone: Timezone,
+    pub ansi: bool,
 }
 impl Default for Log {
     fn default() -> Self {
@@ -56,24 +66,27 @@ impl Default for Log {
             rotation: "daily".into(),
             max_files: 7,
             console: true,
+            timezone: Timezone::Local,
+            ansi: false,
         }
     }
 }
 
-fn ensure_default_config(path: &std::path::Path) -> Result<()> {
-    use std::io::Write;
-    std::fs::create_dir_all(path.parent().context("config path has no parent")?)?;
-    match std::fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(path)
-    {
-        Ok(mut file) => file.write_all(include_bytes!("../rosbridge.toml"))?,
-        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {}
-        Err(error) => {
-            return Err(error).with_context(|| format!("create config {}", path.display()));
-        }
+fn ensure_default_config(path: &std::path::Path, version: &str) -> Result<()> {
+    let directory = path.parent().context("config path has no parent")?;
+    let marker = directory.join(".config-version");
+    let previous = match std::fs::read_to_string(&marker) {
+        Ok(value) => Some(value),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+        Err(error) => return Err(error).context("read default config version"),
+    };
+    if previous.as_deref() == Some(version) && path.exists() {
+        return Ok(());
     }
+    std::fs::create_dir_all(directory)?;
+    std::fs::write(path, include_bytes!("../rosbridge.toml"))
+        .with_context(|| format!("refresh default config {}", path.display()))?;
+    std::fs::write(marker, version).context("write default config version")?;
     Ok(())
 }
 
@@ -81,7 +94,7 @@ pub fn load(args: &mut Args, matches: &ArgMatches) -> Result<Log> {
     if args.config.is_none() {
         let home = std::env::var_os("HOME").context("HOME is unset; provide --config")?;
         let path = std::path::PathBuf::from(home).join(".rosbridge_server_rs/rosbridge.toml");
-        ensure_default_config(&path)?;
+        ensure_default_config(&path, env!("CARGO_PKG_VERSION"))?;
         args.config = Some(path);
     }
     let config: Config = match &args.config {
@@ -184,7 +197,23 @@ pub fn load(args: &mut Args, matches: &ArgMatches) -> Result<Log> {
         );
         args.ros_args = ros;
     }
-    Ok(config.log)
+    let mut log = config.log;
+    if let Ok(level) = std::env::var("RUST_LOG") {
+        log.level = level;
+    }
+    if let Some(level) = &args.log_level {
+        log.level = level.clone();
+    }
+    if let Some(directory) = &args.log_directory {
+        log.directory = Some(directory.clone());
+    }
+    if let Some(timezone) = args.log_timezone {
+        log.timezone = timezone;
+    }
+    if let Some(ansi) = args.log_ansi {
+        log.ansi = ansi;
+    }
+    Ok(log)
 }
 
 #[cfg(test)]
@@ -206,16 +235,25 @@ mod tests {
     }
 
     #[test]
-    fn default_config_is_created_and_never_overwritten() {
+    fn default_config_refreshes_on_version_change() {
         let directory = std::env::temp_dir().join(format!("rosbridge-{}", uuid::Uuid::new_v4()));
         let path = directory.join("rosbridge.toml");
-        ensure_default_config(&path).unwrap();
+        ensure_default_config(&path, "0.1.3").unwrap();
         let text = std::fs::read_to_string(&path).unwrap();
         let _: Config = toml::from_str(&text).unwrap();
         assert_eq!(text, include_str!("../rosbridge.toml"));
         std::fs::write(&path, "port = 8443").unwrap();
-        ensure_default_config(&path).unwrap();
+        ensure_default_config(&path, "0.1.3").unwrap();
         assert_eq!(std::fs::read_to_string(&path).unwrap(), "port = 8443");
+        ensure_default_config(&path, "0.1.4").unwrap();
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), text);
+        std::fs::remove_file(directory.join(".config-version")).unwrap();
+        std::fs::write(&path, "port = 8443").unwrap();
+        ensure_default_config(&path, "0.1.3").unwrap();
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), text);
+        std::fs::remove_file(&path).unwrap();
+        ensure_default_config(&path, "0.1.3").unwrap();
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), text);
         std::fs::remove_dir_all(directory).unwrap();
     }
 

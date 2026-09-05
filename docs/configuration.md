@@ -9,10 +9,17 @@ rosbridge_server_rs --config rosbridge.toml --bind 0.0.0.0:8443
 ```
 
 Precedence is explicit CLI flags, TOML settings, then existing Rust defaults.
-`RUST_LOG` overrides `log.level`. Unknown TOML keys and invalid values stop startup.
+`--log-level` overrides `RUST_LOG`, which overrides TOML `log.level`. Unknown TOML keys and invalid values stop startup.
 Without `--config`, the server creates and reads
-`~/.rosbridge_server_rs/rosbridge.toml`. Existing files are never overwritten;
-`--config` selects only the specified file and does not create the default.
+`~/.rosbridge_server_rs/rosbridge.toml`. Since v0.1.3 this is a managed default:
+on first startup with a different version it is overwritten with the bundled
+configuration. A missing version marker (including upgrades from v0.1.2) also
+refreshes it. Same-version restarts preserve edits; deleting the file recreates it.
+The sibling `.config-version` file records the last version.
+
+Use a separate file with `--config /path/to/custom.toml` for persistent settings.
+Explicit configuration files are read without modification and skip default-file
+refresh entirely.
 This happens on first server startup, including through `uvx` or a uv-installed
 command. Wheel installation has no post-install hook, so `uv tool install`
 alone cannot create a file in the user's home. `--help` and `--version` do not
@@ -20,6 +27,33 @@ create files. Relative paths use the process working directory.
 ROS arguments after `--` remain supported and override TOML-generated rosapi parameters.
 
 ## File logging
+
+By default, logs go only to stderr; no log file is created. Set `log.directory`
+to enable file output. Use an absolute path such as
+`/home/xr/.rosbridge_server_rs/logs`; a literal `~` is not expanded.
+
+Since v0.1.3, both outputs use plain text without color or bold
+fields, and timestamps use the process's local timezone with an explicit UTC
+offset. In containers, configure the container timezone (for example
+`TZ=Asia/Shanghai` with timezone data installed); the host's timezone may differ.
+Version 0.1.2 uses UTC timestamps and styled console fields.
+
+Version 0.1.3 and later also accept CLI overrides:
+
+```bash
+rosbridge_server_rs --log-directory /home/xr/.rosbridge_server_rs/logs \
+  --log-level info --log-timezone local --log-ansi false
+```
+
+| CLI flag | TOML key | Default |
+| --- | --- | --- |
+| `--log-directory PATH` | `log.directory` | No file output |
+| `--log-level FILTER` | `log.level` | `info` |
+| `--log-timezone local\|utc` | `log.timezone` | `local` |
+| `--log-ansi true\|false` | `log.ansi` | `false` |
+
+ANSI styling affects only the console; files always remain plain text.
+Rotation boundaries and filename dates remain UTC regardless of timestamp timezone.
 
 ```toml
 [log]
@@ -42,7 +76,14 @@ User-Agent and `forwarded_for`. Forwarding headers are client-supplied metadata,
 not verified identity; behind Caddy the socket peer is the proxy. Session-end logs
 include duration and the received close code/reason when available. Use the
 connection ID to correlate these with subscription and error logs. No query
-strings, cookies, Authorization headers or message payloads are recorded.
+strings, cookies or Authorization headers are recorded.
+
+Version 0.1.3 and later log service calls and responses at INFO in both
+forwarding directions, including connection, service, request ID and response
+elapsed time. Timeouts are WARN; rejected or failed operations are ERROR with the
+request ID and elapsed time. A received response does not imply application-level
+success. Request and response payloads are not included in these INFO lifecycle logs.
+Periodic rosapi calls also produce INFO logs; use a higher log level to reduce them.
 
 ## Python launch parameter mapping
 
@@ -115,3 +156,24 @@ Add other discovery services explicitly if your viewer requests them. Native ros
 uses these lists to filter discovery; the forwarding rules still apply with
 `no_rosapi = true`. These are bridge forwarding permissions, not DDS permissions
 for other ROS nodes or controls over the side effects of an allowed service.
+
+### Service payload debugging
+
+Since v0.1.3, enable service request/response previews with:
+
+```bash
+rosbridge_server_rs --log-level 'info,rosbridge_server_rs::service_payload=debug'
+```
+
+A global `--log-level debug` also enables them. Previews include connection,
+service, request ID, direction and request/response kind. Each compact JSON preview
+is limited to 4096 UTF-8 bytes and marked `truncated=true` when shortened; a
+truncated preview is not necessarily valid JSON. Formatting stops at the limit
+and is skipped entirely when this DEBUG target is disabled. Newlines in strings
+are JSON-escaped. The message sent over ROS/WebSocket is unchanged.
+
+These previews are not redacted and may contain credentials or private settings.
+Startup logs warn when enabled. They use the same console/file destinations and
+retention as other logs. INFO remains payload-free; restore it after debugging.
+Only accepted, forwarded service requests and responses are previewed, after
+parameter-name filtering on responses. Rejected requests do not emit previews.

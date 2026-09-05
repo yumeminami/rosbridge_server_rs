@@ -11,7 +11,7 @@
 
 [package]
 name = "rosbridge_server_rs"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2024"
 license = "EPL-2.0 OR Apache-2.0"
 description = "ROS 2 rosbridge WebSocket server implemented in Rust"
@@ -37,5 +37,5 @@ tokio-tungstenite = "0.24"
 toml = "0.8"
 tracing = "0.1"
 tracing-appender = "0.2"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "chrono"] }
 uuid = { version = "1", features = ["v4"] }

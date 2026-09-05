@@ -10,17 +10,41 @@
 //
 
 //! Console output and optional rotating file logs.
-use crate::config::Log;
+use crate::config::{Log, Timezone};
 use anyhow::{Result, bail, ensure};
 use tracing_appender::{
     non_blocking::WorkerGuard,
     rolling::{RollingFileAppender, Rotation},
 };
-use tracing_subscriber::{EnvFilter, prelude::*};
+use tracing_subscriber::{
+    EnvFilter,
+    fmt::{
+        format::Writer,
+        time::{ChronoLocal, ChronoUtc, FormatTime},
+    },
+    prelude::*,
+};
+
+#[derive(Clone)]
+enum Timer {
+    Local(ChronoLocal),
+    Utc(ChronoUtc),
+}
+impl FormatTime for Timer {
+    fn format_time(&self, writer: &mut Writer<'_>) -> std::fmt::Result {
+        match self {
+            Self::Local(timer) => timer.format_time(writer),
+            Self::Utc(timer) => timer.format_time(writer),
+        }
+    }
+}
 
 pub fn init(config: &Log) -> Result<Option<WorkerGuard>> {
-    let filter =
-        EnvFilter::try_new(std::env::var("RUST_LOG").unwrap_or_else(|_| config.level.clone()))?;
+    let filter = EnvFilter::try_new(&config.level)?;
+    let timer = match config.timezone {
+        Timezone::Local => Timer::Local(ChronoLocal::rfc_3339()),
+        Timezone::Utc => Timer::Utc(ChronoUtc::rfc_3339()),
+    };
     ensure!(
         config.console || config.directory.is_some(),
         "enable console logging or set log.directory"
@@ -44,6 +68,7 @@ pub fn init(config: &Log) -> Result<Option<WorkerGuard>> {
             Some(
                 tracing_subscriber::fmt::layer()
                     .with_ansi(false)
+                    .with_timer(timer.clone())
                     .with_writer(writer),
             ),
             Some(guard),
@@ -51,13 +76,21 @@ pub fn init(config: &Log) -> Result<Option<WorkerGuard>> {
     } else {
         (None, None)
     };
-    let console = config
-        .console
-        .then(|| tracing_subscriber::fmt::layer().with_writer(std::io::stderr));
+    let console = config.console.then(|| {
+        tracing_subscriber::fmt::layer()
+            .with_ansi(config.ansi)
+            .with_timer(timer.clone())
+            .with_writer(std::io::stderr)
+    });
     tracing_subscriber::registry()
         .with(filter)
         .with(console)
         .with(file)
         .try_init()?;
+    if tracing::enabled!(target: "rosbridge_server_rs::service_payload", tracing::Level::DEBUG) {
+        tracing::warn!(
+            "DEBUG service payload logging is enabled; payloads may contain sensitive data (4096-byte previews)"
+        );
+    }
     Ok(guard)
 }

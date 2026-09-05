@@ -9,7 +9,8 @@
 # SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
 #
 
-# Created and loaded at ~/.rosbridge_server_rs/rosbridge.toml on first startup.
+# Managed default at ~/.rosbridge_server_rs/rosbridge.toml; replaced on version changes.
+# Keep persistent settings in another file and start with --config /path/to/file.toml.
 # Explicit command-line flags override this file; --config selects another file.
 address = "0.0.0.0"
 port = 9090
@@ -34,6 +35,8 @@ params_timeout = 5.0
 
 [log]
 level = "info"
+timezone = "local"
+ansi = false
 console = true
 # Uncomment to also write logs to disk. Paths are relative to the working directory.
 # directory = "logs"

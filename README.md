@@ -15,11 +15,11 @@ message bindings or Python server process are required.
 
 Requires **ROS 2 Humble on Ubuntu 22.04** or **ROS 2 Jazzy on Ubuntu 24.04**.
 Download the `.deb` matching the ROS distribution and architecture from
-[v0.1.2](https://github.com/yumeminami/rosbridge_server_rs/releases/tag/v0.1.2):
+[v0.1.3](https://github.com/yumeminami/rosbridge_server_rs/releases/tag/v0.1.3):
 `amd64` for Intel/AMD, or `arm64` for ARM64. With the ROS apt repository configured:
 
 ```bash
-sudo apt install ./rosbridge-server-rs_0.1.2_jazzy_ubuntu24.04_amd64.deb
+sudo apt install ./rosbridge-server-rs_0.1.3_jazzy_ubuntu24.04_amd64.deb
 source /opt/ros/jazzy/setup.bash
 rosbridge_server_rs
 ```
@@ -52,12 +52,12 @@ Options: [usage](docs/usage.md). Developers: [build from source](docs/building.m
 
 ## Configuration and logs
 
-Version 0.1.2 and later create and load
-`~/.rosbridge_server_rs/rosbridge.toml` on first startup, without overwriting an
-existing file. This also applies when started through uvx or an installed uv tool;
-`uv tool install` itself does not run the server or create configuration.
+Version 0.1.3 manages `~/.rosbridge_server_rs/rosbridge.toml` as a versioned
+default: first startup with a different version replaces it with the bundled
+configuration. Same-version restarts preserve it. This happens when the server
+starts through uvx, a uv-installed command or a native binary, not at install time.
 
-Edit that file, then restart the server. To select another file:
+**Keep persistent settings in a separate file and select it explicitly:**
 
 ```bash
 rosbridge_server_rs --config /path/to/rosbridge.toml

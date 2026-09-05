@@ -92,6 +92,7 @@ struct Service {
 }
 
 struct Call {
+    started: Instant,
     parameter_names: bool,
     owner: Connection,
     id: Option<String>,
@@ -101,6 +102,7 @@ struct Call {
 }
 
 struct ExternalRequest {
+    started: Instant,
     owner: Connection,
     entity: Entity,
     request: u64,
@@ -286,10 +288,13 @@ impl<B: Backend> Bridge<B> {
     }
 
     pub fn command(&mut self, owner: Connection, v: Value) {
+        let started = Instant::now();
         if let Err(e) = self.execute(owner, &v) {
             tracing::error!(
                 connection = owner,
                 op = v["op"].as_str().unwrap_or("unknown"),
+                request_id = v["id"].as_str().unwrap_or(""),
+                duration_seconds = started.elapsed().as_secs_f64(),
                 resource = v
                     .get("topic")
                     .or_else(|| v.get("service"))
@@ -367,6 +372,14 @@ impl<B: Backend> Bridge<B> {
 
     fn response(&mut self, entity: Entity, sequence: i64, mut values: Value) -> Result<()> {
         if let Some(call) = self.calls.remove(&(entity, sequence)) {
+            tracing::info!(
+                connection = call.owner,
+                service = call.service,
+                request_id = call.id.as_deref().unwrap_or(""),
+                direction = "websocket_to_ros",
+                duration_seconds = call.started.elapsed().as_secs_f64(),
+                "Service response received"
+            );
             if call.parameter_names
                 && self.access.params.is_some()
                 && let Some(names) = values["names"].as_array_mut()
@@ -378,6 +391,14 @@ impl<B: Backend> Bridge<B> {
                         .is_some_and(|(_, name)| crate::access::matches(&self.access.params, name))
                 });
             }
+            services::log_payload(
+                call.owner,
+                &call.service,
+                call.id.as_deref(),
+                "websocket_to_ros",
+                "response",
+                &values,
+            );
             let response = json!({
                 "op": "service_response",
                 "service": call.service,
@@ -510,6 +531,14 @@ impl<B: Backend> Bridge<B> {
             .collect();
         for key in expired {
             let c = self.calls.remove(&key).unwrap();
+            tracing::warn!(
+                connection = c.owner,
+                service = c.service,
+                request_id = c.id.as_deref().unwrap_or(""),
+                direction = "websocket_to_ros",
+                duration_seconds = c.started.elapsed().as_secs_f64(),
+                "Service call timed out"
+            );
             let response = json!({
                 "op": "service_response",
                 "service": c.service,
@@ -527,6 +556,14 @@ impl<B: Backend> Bridge<B> {
             .collect();
         for id in expired {
             let r = self.external.remove(&id).unwrap();
+            tracing::warn!(
+                connection = r.owner,
+                service = r.service,
+                request_id = id,
+                direction = "ros_to_websocket",
+                duration_seconds = r.started.elapsed().as_secs_f64(),
+                "Service call timed out"
+            );
             self.backend.discard_request(r.entity, r.request);
         }
         self.server_goals.retain(|_, g| {

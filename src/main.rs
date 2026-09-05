@@ -24,6 +24,18 @@ struct Args {
     /// Read settings from a TOML file. Explicit command-line flags take precedence.
     #[arg(long)]
     config: Option<std::path::PathBuf>,
+    /// Write rotating logs to this directory.
+    #[arg(long)]
+    log_directory: Option<std::path::PathBuf>,
+    /// Log filter, for example info or rosbridge_server_rs=debug.
+    #[arg(long)]
+    log_level: Option<String>,
+    /// Timestamp timezone (default: local).
+    #[arg(long, value_enum)]
+    log_timezone: Option<config::Timezone>,
+    /// Enable or disable console ANSI colors and bold fields (default: false).
+    #[arg(long, action = clap::ArgAction::Set)]
+    log_ansi: Option<bool>,
     #[arg(long, default_value = "/")]
     url_path: String,
     #[arg(long, default_value_t = 256)]

@@ -20,8 +20,51 @@ use anyhow::{Context, Result, ensure};
 use serde_json::{Value, json};
 use std::time::{Duration, Instant};
 
+// Stop formatting at the limit rather than allocating the complete response.
+#[derive(Default)]
+struct PayloadPreview {
+    text: String,
+    truncated: bool,
+}
+impl std::fmt::Write for PayloadPreview {
+    fn write_str(&mut self, value: &str) -> std::fmt::Result {
+        let mut end = value.len().min(4096 - self.text.len());
+        while !value.is_char_boundary(end) {
+            end -= 1;
+        }
+        self.text.push_str(&value[..end]);
+        if end < value.len() {
+            self.truncated = true;
+            return Err(std::fmt::Error);
+        }
+        Ok(())
+    }
+}
+
+pub(super) fn log_payload(
+    connection: Connection,
+    service: &str,
+    request_id: Option<&str>,
+    direction: &str,
+    kind: &str,
+    value: &Value,
+) {
+    if !tracing::enabled!(target: "rosbridge_server_rs::service_payload", tracing::Level::DEBUG) {
+        return;
+    }
+    use std::fmt::Write;
+    let mut preview = PayloadPreview::default();
+    // A formatting error means the preview reached its byte limit.
+    let _ = write!(&mut preview, "{value}");
+    tracing::debug!(target: "rosbridge_server_rs::service_payload",
+        connection, service, request_id = request_id.unwrap_or(""), direction, kind,
+        payload = %preview.text, truncated = preview.truncated, "Service payload");
+}
+
 impl<B: Backend> Bridge<B> {
     pub(super) fn call_service(&mut self, owner: Connection, v: &Value) -> Result<()> {
+        let started = Instant::now();
+        let request_id = id(v)?;
         let service = name(v, "service")?;
         let options = Options::parse(v)?;
         let typ = self.resolve(v, "service", "srv")?;
@@ -40,12 +83,28 @@ impl<B: Backend> Bridge<B> {
                 return Err(e);
             }
         };
+        tracing::info!(
+            connection = owner,
+            service,
+            request_id = request_id.as_deref().unwrap_or(""),
+            direction = "websocket_to_ros",
+            "Service call sent"
+        );
+        log_payload(
+            owner,
+            &service,
+            request_id.as_deref(),
+            "websocket_to_ros",
+            "request",
+            &args,
+        );
         self.calls.insert(
             (entity, sequence),
             Call {
                 parameter_names: typ == "rosapi_msgs/srv/GetParamNames",
                 owner,
-                id: id(v)?,
+                id: request_id,
+                started,
                 service,
                 options,
                 expires: Instant::now() + timeout,
@@ -105,6 +164,22 @@ impl<B: Backend> Bridge<B> {
             "ROS services cannot carry an error response; request will time out"
         );
         self.backend.respond(r.entity, r.request, &v["values"])?;
+        tracing::info!(
+            connection = owner,
+            service,
+            request_id = id,
+            direction = "ros_to_websocket",
+            duration_seconds = r.started.elapsed().as_secs_f64(),
+            "Service response sent"
+        );
+        log_payload(
+            owner,
+            &service,
+            Some(id),
+            "ros_to_websocket",
+            "response",
+            &v["values"],
+        );
         self.external.remove(id);
         Ok(())
     }
@@ -123,12 +198,29 @@ impl<B: Backend> Bridge<B> {
             let owner = s.owner;
             s.next_request += 1;
             let id = format!("service_request:{name}:{}", s.next_request);
+            let started = Instant::now();
+            tracing::info!(
+                connection = owner,
+                service = name,
+                request_id = id,
+                direction = "ros_to_websocket",
+                "Service call forwarded"
+            );
+            log_payload(
+                owner,
+                &name,
+                Some(&id),
+                "ros_to_websocket",
+                "request",
+                &args,
+            );
             self.external.insert(
                 id.clone(),
                 ExternalRequest {
                     owner,
                     entity,
                     request,
+                    started,
                     service: name.clone(),
                     expires: Instant::now() + self.timeout,
                 },
@@ -142,5 +234,27 @@ impl<B: Backend> Bridge<B> {
             );
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fmt::Write;
+
+    #[test]
+    fn payload_preview_is_bounded_and_preserves_utf8() {
+        let mut preview = PayloadPreview::default();
+        let value = json!({"text": "界".repeat(5000), "tail": "omitted"});
+        assert!(write!(&mut preview, "{value}").is_err());
+        assert!(preview.truncated);
+        assert!(preview.text.len() <= 4096);
+        assert!(!preview.text.contains("omitted"));
+        let mut short = PayloadPreview::default();
+        let value = json!({"text": "line\n界"});
+        write!(&mut short, "{value}").unwrap();
+        assert!(!short.truncated);
+        assert_eq!(serde_json::from_str::<Value>(&short.text).unwrap(), value);
+        assert!(!short.text.contains('\n'));
     }
 }
