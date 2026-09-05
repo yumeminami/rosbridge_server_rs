@@ -64,22 +64,24 @@ typesupport libraries. Source their workspace after the ROS setup file.
 
 ## uv and uvx
 
-Download both `.whl` files from the release page into a `dist` directory. uv
-uses their standard platform tags to select x86_64 or ARM64. The launcher reads
-`$ROS_DISTRO` to select its Humble or Jazzy binary:
+After the v0.1.1 PyPI publication, install and run with:
 
 ```bash
-source /opt/ros/$ROS_DISTRO/setup.bash
-uvx --no-index --find-links ./dist rosbridge-server-rs
-```
-
-For a persistent command:
-
-```bash
-uv tool install --no-index --find-links ./dist rosbridge-server-rs
+source /opt/ros/jazzy/setup.bash # Use humble for ROS 2 Humble.
+uv tool install rosbridge_server_rs
 rosbridge_server_rs
 ```
 
-The wheel contains the native executable; it does not install ROS system
-packages. Install Humble or Jazzy and `ros-$ROS_DISTRO-rosapi-msgs` first. Using
-both wheel files in the same directory lets uv select the architecture automatically.
+Or run directly:
+
+```bash
+uvx rosbridge_server_rs
+```
+
+uv chooses the wheel for x86_64 or ARM64; the launcher selects its Humble or
+Jazzy binary from `$ROS_DISTRO`. Both command names, `rosbridge_server_rs` and
+`rosbridge-server-rs`, are installed. ROS and `ros-$ROS_DISTRO-rosapi-msgs`
+must already be installed; uv does not install system packages.
+
+While PyPI publication is pending, download the release wheels into `dist` and
+run `uvx --no-index --find-links ./dist rosbridge_server_rs`.

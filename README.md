@@ -26,14 +26,22 @@ rosbridge_server_rs
 
 `rosbridge-server-rs` is provided as an equivalent command.
 
-With [uv](https://docs.astral.sh/uv/), download both release wheels into one
-directory. uv selects x86_64 or ARM64, and the launcher reads `$ROS_DISTRO` to
-select Humble or Jazzy:
+With [uv](https://docs.astral.sh/uv/), install a persistent command:
 
 ```bash
-source /opt/ros/jazzy/setup.bash
-uvx --no-index --find-links ./dist rosbridge-server-rs
+uv tool install rosbridge_server_rs
+rosbridge_server_rs
 ```
+
+Or run without a persistent installation:
+
+```bash
+uvx rosbridge_server_rs
+```
+
+Source your ROS environment first. uv selects x86_64 or ARM64 automatically;
+the launcher reads `$ROS_DISTRO` to select Humble or Jazzy. These commands require
+the v0.1.1 wheels to be published on PyPI; the first publication is pending.
 
 Use the `arm64` filename on ARM64. Connect your client to `ws://localhost:9090`
 (or the server's IP address). All 29 rosapi services are built in.
