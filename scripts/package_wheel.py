@@ -52,7 +52,7 @@ def main():
             f"Version: {version}\n"
             "Summary: ROS 2 rosbridge WebSocket server implemented in Rust\n"
             "License-Expression: EPL-2.0 OR Apache-2.0\n"
-            "License-File: licenses/LICENSE\n"
+            "License-File: LICENSE\n"
             "Requires-Python: >=3.8\n"
             "Project-URL: Repository, https://github.com/yumeminami/rosbridge_server_rs\n"
         ).encode(),

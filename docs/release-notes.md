@@ -25,13 +25,10 @@ Source your workspace before starting if you use custom message packages.
 Archives require the same external ROS runtime libraries. `SHA256SUMS` covers
 all release packages.
 
-For uv/uvx, download both wheel files into one directory. uv selects the current
-architecture from the wheel tags and `$ROS_DISTRO` for Humble or Jazzy:
-
-```bash
-source /opt/ros/jazzy/setup.bash
-uvx --no-index --find-links ./dist rosbridge-server-rs
-```
+Once the wheels are published to PyPI, install with
+`uv tool install rosbridge_server_rs`, then run `rosbridge_server_rs`, or use
+`uvx rosbridge_server_rs` directly. Source the ROS environment first. uv selects
+the architecture, and the launcher selects the binary using `$ROS_DISTRO`.
 
 ## Scope
 
