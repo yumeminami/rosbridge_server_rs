@@ -21,7 +21,14 @@ Measured JSON topic roundtrips on Linux ARM64 / ROS 2 Jazzy, with 32 messages in
 
 ## Build and run
 
-Requires Linux, ROS 2 Jazzy, Rust 1.93 or later, and `clang` / `libclang-dev`.
+Requires Linux, ROS 2 Jazzy, and Rust 1.93 or later. On Ubuntu, install the
+native build dependencies:
+
+```bash
+sudo apt update
+sudo apt install build-essential clang libclang-dev pkg-config libssl-dev
+```
+
 Install the ROS interface packages used by your application, including their C
 typesupport and introspection libraries.
 

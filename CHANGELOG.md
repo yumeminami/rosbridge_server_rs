@@ -32,6 +32,7 @@ Changes are recorded here before release. No version has been released yet.
 
 ### Changed
 
+- Document the Ubuntu native build dependencies in the README.
 - Separate topic, service and Action handling from protocol dispatch.
 - Separate WebSocket connection handling from the command-line entry point.
 - Use shared test scripts and a portable ROS workspace mount in Docker Compose.
