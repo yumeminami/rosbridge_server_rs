@@ -36,7 +36,7 @@ params_timeout = 5.0
 [log]
 level = "info"
 timezone = "local"
-ansi = false
+ansi = true
 console = true
 # Uncomment to also write logs to disk. Paths are relative to the working directory.
 # directory = "logs"

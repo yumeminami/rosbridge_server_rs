@@ -2,6 +2,14 @@
 
 Release history for rosbridge_server_rs.
 
+## 0.1.4 — 2026-09-06
+
+- Name active logs YYYYMMDDHHmm.logging and archive them as .log, using the selected timezone.
+- Restore terminal level colors without bold field names; redirected logs remain plain.
+
+- Expand home-relative log directories in TOML and CLI arguments.
+- Move normal service call/response lifecycle logs to DEBUG; retain timeout and failure logs.
+
 ## 0.1.3 — 2026-09-06
 
 - Refresh the managed default TOML on version changes; preserve explicit --config files and same-version edits.

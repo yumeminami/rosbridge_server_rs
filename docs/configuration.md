@@ -30,11 +30,15 @@ ROS arguments after `--` remain supported and override TOML-generated rosapi par
 
 By default, logs go only to stderr; no log file is created. Set `log.directory`
 to enable file output. Use an absolute path such as
-`/home/xr/.rosbridge_server_rs/logs`; a literal `~` is not expanded.
+`/home/xr/.rosbridge_server_rs/logs`. Version 0.1.4 and later also expand
+`~` and `~/...` against HOME in both TOML and `--log-directory`. Version 0.1.3
+treats a quoted tilde literally; use an absolute path or shell-expanded
+`--log-directory "$HOME/logs"` with that version.
 
-Since v0.1.3, both outputs use plain text without color or bold
-fields, and timestamps use the process's local timezone with an explicit UTC
-offset. In containers, configure the container timezone (for example
+Version 0.1.3 defaults to plain console output. Version 0.1.4 and later
+restore level colors on terminals while keeping field names unstyled. Redirected
+output and log files stay plain. Timestamps use the process's local timezone with
+an explicit UTC offset. In containers, configure the container timezone (for example
 `TZ=Asia/Shanghai` with timezone data installed); the host's timezone may differ.
 Version 0.1.2 uses UTC timestamps and styled console fields.
 
@@ -50,10 +54,11 @@ rosbridge_server_rs --log-directory /home/xr/.rosbridge_server_rs/logs \
 | `--log-directory PATH` | `log.directory` | No file output |
 | `--log-level FILTER` | `log.level` | `info` |
 | `--log-timezone local\|utc` | `log.timezone` | `local` |
-| `--log-ansi true\|false` | `log.ansi` | `false` |
+| `--log-ansi true\|false` | `log.ansi` | `true` (terminal colors; fields stay plain) |
 
 ANSI styling affects only the console; files always remain plain text.
-Rotation boundaries and filename dates remain UTC regardless of timestamp timezone.
+In v0.1.3 rotation dates are UTC. Version 0.1.4 and later use the selected
+log timezone for rotation and filenames as described below.
 
 ```toml
 [log]
@@ -64,12 +69,27 @@ rotation = "daily"
 max_files = 7
 ```
 
-`tracing-appender` writes files through a bounded background queue. Daily and hourly
-rotation use UTC; `never` appends to one file. `max_files` retains matching rotated
-files; it is not a size limit. The writer flushes on graceful shutdown. Its default
-lossy queue can drop log lines if disk writes cannot keep up. Console output goes
-to stderr; file output has no ANSI color codes. Ensure the configured directory
-is writable. In Docker, use a bind-mounted directory to preserve logs.
+File output still uses the bounded `tracing-appender` background queue. Version 0.1.4 and later name the active file `YYYYMMDDHHmm.logging` using its creation
+time in `log.timezone`. Rotation or graceful shutdown closes it as
+`YYYYMMDDHHmm.log`. For example:
+
+```text
+202609060240.log
+202609060300.logging
+```
+
+`daily`/`hourly` rotate on the first write after the corresponding calendar
+boundary in the selected timezone; `never` keeps one file for that process run.
+Each restart opens a new file. If a timestamp already exists, `-1`, `-2`, etc.
+are appended rather than overwriting it. Abnormal termination may leave
+`.logging` files; they are preserved, not reused or pruned.
+
+`max_files` retains that many completed timestamped `.log` archives, in addition
+to active/unfinished files. It is not a size limit. Use a dedicated log directory;
+retention ignores unrelated filenames, including the old `rosbridge_server_rs.log.*`
+format. The writer drains and finalizes on graceful shutdown. Its default lossy
+queue can drop lines if disk writes cannot keep up. Console output goes to stderr.
+Ensure the directory is writable; in Docker, use a bind mount to preserve logs.
 
 Handshake logs include a numeric connection ID, socket peer, URL path, Origin,
 User-Agent and `forwarded_for`. Forwarding headers are client-supplied metadata,
@@ -78,12 +98,16 @@ include duration and the received close code/reason when available. Use the
 connection ID to correlate these with subscription and error logs. No query
 strings, cookies or Authorization headers are recorded.
 
-Version 0.1.3 and later log service calls and responses at INFO in both
+Version 0.1.3 logs service calls and responses at INFO in both
 forwarding directions, including connection, service, request ID and response
 elapsed time. Timeouts are WARN; rejected or failed operations are ERROR with the
 request ID and elapsed time. A received response does not imply application-level
 success. Request and response payloads are not included in these INFO lifecycle logs.
-Periodic rosapi calls also produce INFO logs; use a higher log level to reduce them.
+In v0.1.4 and later, normal service calls and responses use DEBUG
+instead, under `rosbridge_server_rs::service_calls`. INFO no longer includes periodic
+rosapi call/response lifecycle lines. Timeouts remain WARN and errors remain ERROR.
+Enable lifecycle details without payloads using
+`--log-level 'info,rosbridge_server_rs::service_calls=debug'`.
 
 ## Python launch parameter mapping
 

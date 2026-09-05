@@ -33,7 +33,7 @@ struct Args {
     /// Timestamp timezone (default: local).
     #[arg(long, value_enum)]
     log_timezone: Option<config::Timezone>,
-    /// Enable or disable console ANSI colors and bold fields (default: false).
+    /// Enable or disable terminal colors; field names stay plain (default: true).
     #[arg(long, action = clap::ArgAction::Set)]
     log_ansi: Option<bool>,
     #[arg(long, default_value = "/")]

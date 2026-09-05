@@ -1,43 +1,50 @@
-# rosbridge_server_rs 0.1.3
+# rosbridge_server_rs 0.1.4
 
-Adds local-time logging, CLI log controls and bounded service payload debugging.
+Improves log filenames, terminal readability and service logging controls.
 
-- Plain console logs by default, with local timestamps and explicit timezone offsets.
-- CLI overrides for log directory, filter, local/UTC timestamps and ANSI styling.
-- Service call, response and timeout logs with client/request IDs and elapsed time.
-- Opt-in DEBUG request/response previews, limited to 4096 UTF-8 bytes per entry.
-- Anonymized benchmark topic names and SoC details moved off the README homepage.
+- Active files use YYYYMMDDHHmm.logging; rotation and graceful shutdown archive
+  them as YYYYMMDDHHmm.log. Names and rotation follow the selected log timezone.
+- Same-minute restarts add a numeric suffix instead of overwriting logs.
+  Unfinished .logging files are preserved; max_files counts completed archives.
+- Terminal level colors return, with plain field names and no bold styling.
+  Redirected output and file logs remain uncolored.
+- TOML and CLI log directories expand ~ and ~/... against HOME.
+- Normal service calls and responses move to DEBUG. Timeouts remain WARN and
+  failures remain ERROR. Payload previews remain separately opt-in.
 - Humble / Ubuntu 22.04 and Jazzy / Ubuntu 24.04 packages for Linux x86_64 and ARM64.
 
 ## Configuration upgrade
 
-**The default ~/.rosbridge_server_rs/rosbridge.toml is now a managed file.**
-First startup with a different version replaces it with the bundled defaults.
-Upgrading from v0.1.2 also replaces it because no version marker exists yet.
-Same-version restarts preserve edits.
+First startup with v0.1.4 refreshes the managed
+~/.rosbridge_server_rs/rosbridge.toml with the bundled defaults.
+Same-version restarts preserve edits. To keep settings across upgrades, save
+another file and use --config /path/to/custom.toml; explicit files are not modified.
 
-To retain your settings, copy them to another path before starting v0.1.3 and use:
-
-```bash
-rosbridge_server_rs --config /path/to/custom.toml
-```
-
-Explicit configuration files are never modified. New log defaults are local time,
-ANSI styling disabled, INFO level and no file output. File rotation still uses UTC.
-Enable service payload previews only when needed:
+Defaults are local time, terminal colors enabled, INFO level and no file output.
+Use a dedicated log directory. Older rosbridge_server_rs.log.* files are left in
+place and are not counted by the new timestamped archive retention.
 
 ```bash
-rosbridge_server_rs --log-level 'info,rosbridge_server_rs::service_payload=debug'
+rosbridge_server_rs --log-directory "$HOME/logs/rosbridge" --log-timezone local
 ```
 
-Previews are not redacted. INFO logs do not include payloads.
+Enable service call details without payloads:
+
+```bash
+rosbridge_server_rs --log-level 'info,rosbridge_server_rs::service_calls=debug'
+```
+
+To also inspect request/response contents, enable
+rosbridge_server_rs::service_payload=debug. Previews are capped at 4096 UTF-8
+bytes, marked when truncated, and are not redacted. INFO logs contain neither
+normal service lifecycle entries nor payloads.
 
 ## Install
 
 With Humble or Jazzy installed, download the matching `.deb` and run:
 
 ```bash
-sudo apt install ./rosbridge-server-rs_0.1.3_jazzy_ubuntu24.04_amd64.deb
+sudo apt install ./rosbridge-server-rs_0.1.4_jazzy_ubuntu24.04_amd64.deb
 source /opt/ros/jazzy/setup.bash
 rosbridge_server_rs
 ```
@@ -49,8 +56,8 @@ Archives require the same external ROS runtime libraries. `SHA256SUMS` covers
 all release packages.
 
 Install from PyPI with
-`uv tool install rosbridge_server_rs==0.1.3`, then run `rosbridge_server_rs`, or use
-`uvx rosbridge_server_rs==0.1.3` directly. Source the ROS environment first. uv selects
+`uv tool install rosbridge_server_rs==0.1.4`, then run `rosbridge_server_rs`, or use
+`uvx rosbridge_server_rs==0.1.4` directly. Source the ROS environment first. uv selects
 the architecture, and the launcher selects the binary using `$ROS_DISTRO`.
 
 To upgrade an existing uv tool, run `uv tool upgrade rosbridge_server_rs`.

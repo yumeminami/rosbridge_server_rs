@@ -22,16 +22,25 @@ import pytest
 import websockets
 
 
-@pytest.mark.parametrize("log_level", ["info", "info,rosbridge_server_rs::service_payload=debug"])
-def test_config_and_file_logs(tmp_path, log_level):
+@pytest.mark.parametrize(
+    "log_level",
+    [
+        "info",
+        "info,rosbridge_server_rs::service_calls=debug",
+        "info,rosbridge_server_rs::service_calls=debug,rosbridge_server_rs::service_payload=debug",
+    ],
+)
+@pytest.mark.parametrize("directory_source", ["cli", "toml"])
+def test_config_and_file_logs(tmp_path, log_level, directory_source):
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
         port = sock.getsockname()[1]
     logs = tmp_path / "logs"
     config = tmp_path / "bridge.toml"
+    configured_directory = "~/logs-unused" if directory_source == "cli" else "~/logs"
     config.write_text(
         f'port = 1\nurl_path = "/bridge"\nno_rosapi = true\n'
-        f'[log]\ndirectory = "{logs}-unused"\nrotation = "never"\nconsole = false\n'
+        f'[log]\ndirectory = "{configured_directory}"\nrotation = "never"\nconsole = false\n'
         'level = "error"\ntimezone = "utc"\n'
     )
     original_config = config.read_bytes()
@@ -42,14 +51,13 @@ def test_config_and_file_logs(tmp_path, log_level):
             str(config),
             "--bind",
             f"127.0.0.1:{port}",
-            "--log-directory",
-            str(logs),
+            *(["--log-directory", "~/logs"] if directory_source == "cli" else []),
             "--log-level",
             log_level,
             "--log-timezone",
             "local",
         ],
-        env={**os.environ, "TZ": "Asia/Shanghai"},
+        env={**os.environ, "HOME": str(tmp_path), "TZ": "Asia/Shanghai"},
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
@@ -64,6 +72,9 @@ def test_config_and_file_logs(tmp_path, log_level):
                 assert time.monotonic() < deadline
                 time.sleep(0.05)
 
+        active = list(logs.glob("*.logging"))
+        assert len(active) == 1
+        assert active[0].stem.isdigit() and len(active[0].stem) == 12
         payload = "private-payload-marker" + "界" * 2000 + "payload-tail-marker"
 
         async def exercise():
@@ -134,7 +145,11 @@ def test_config_and_file_logs(tmp_path, log_level):
     assert config.read_bytes() == original_config
     assert stdout == b"" and stderr == b""
     assert not logs.with_name(logs.name + "-unused").exists()
-    text = (logs / "rosbridge_server_rs.log").read_text()
+    archives = list(logs.glob("*.log"))
+    assert len(archives) == 1
+    assert archives[0].stem.isdigit() and len(archives[0].stem) == 12
+    assert not list(logs.glob("*.logging"))
+    text = archives[0].read_text()
     for expected in [
         "WebSocket client handshake",
         "127.0.0.1",
@@ -146,16 +161,18 @@ def test_config_and_file_logs(tmp_path, log_level):
         "/missing_config_test_topic",
         "duration_seconds",
         "test complete",
+        "Service call timed out",
+        "service-log-timeout",
+    ]:
+        assert expected in text
+    for message in [
         "Service call sent",
         "Service call forwarded",
         "Service response sent",
         "Service response received",
-        "Service call timed out",
-        "service-log-success",
-        "service-log-timeout",
     ]:
-        assert expected in text
-    if "debug" in log_level:
+        assert (message in text) == ("::service_calls=debug" in log_level)
+    if "::service_payload=debug" in log_level:
         assert "private-payload-marker" in text
         assert "payload-tail-marker" not in text
         assert "truncated=true" in text

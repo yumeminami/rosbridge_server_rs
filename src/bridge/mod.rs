@@ -372,7 +372,7 @@ impl<B: Backend> Bridge<B> {
 
     fn response(&mut self, entity: Entity, sequence: i64, mut values: Value) -> Result<()> {
         if let Some(call) = self.calls.remove(&(entity, sequence)) {
-            tracing::info!(
+            tracing::debug!(target: "rosbridge_server_rs::service_calls",
                 connection = call.owner,
                 service = call.service,
                 request_id = call.id.as_deref().unwrap_or(""),

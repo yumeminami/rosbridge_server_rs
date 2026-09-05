@@ -1,6 +1,6 @@
 # Installation
 
-Version 0.1.3 targets ROS 2 Humble on Ubuntu 22.04 and ROS 2 Jazzy on Ubuntu
+Version 0.1.4 targets ROS 2 Humble on Ubuntu 22.04 and ROS 2 Jazzy on Ubuntu
 24.04, on amd64 and arm64. Install ROS and configure its apt repository first,
 following the [Humble](https://docs.ros.org/en/humble/Installation.html) or
 [Jazzy](https://docs.ros.org/en/jazzy/Installation.html) installation guide.
@@ -9,10 +9,10 @@ No Rust compiler or Python rosbridge server is needed.
 ## Debian package
 
 Download the package matching `dpkg --print-architecture` from
-[the release page](https://github.com/yumeminami/rosbridge_server_rs/releases/tag/v0.1.3).
+[the release page](https://github.com/yumeminami/rosbridge_server_rs/releases/tag/v0.1.4).
 
 ```bash
-sudo apt install ./rosbridge-server-rs_0.1.3_jazzy_ubuntu24.04_amd64.deb
+sudo apt install ./rosbridge-server-rs_0.1.4_jazzy_ubuntu24.04_amd64.deb
 source /opt/ros/jazzy/setup.bash
 rosbridge_server_rs
 ```
@@ -35,7 +35,7 @@ supported host with ROS installed:
 
 ```bash
 sudo apt install ros-$ROS_DISTRO-rosapi-msgs
-tar -xzf rosbridge-server-rs_0.1.3_jazzy_ubuntu24.04_amd64.tar.gz
+tar -xzf rosbridge-server-rs_0.1.4_jazzy_ubuntu24.04_amd64.tar.gz
 source /opt/ros/$ROS_DISTRO/setup.bash
 ./rosbridge_server_rs
 ```

@@ -83,7 +83,7 @@ impl<B: Backend> Bridge<B> {
                 return Err(e);
             }
         };
-        tracing::info!(
+        tracing::debug!(target: "rosbridge_server_rs::service_calls",
             connection = owner,
             service,
             request_id = request_id.as_deref().unwrap_or(""),
@@ -164,7 +164,7 @@ impl<B: Backend> Bridge<B> {
             "ROS services cannot carry an error response; request will time out"
         );
         self.backend.respond(r.entity, r.request, &v["values"])?;
-        tracing::info!(
+        tracing::debug!(target: "rosbridge_server_rs::service_calls",
             connection = owner,
             service,
             request_id = id,
@@ -199,7 +199,7 @@ impl<B: Backend> Bridge<B> {
             s.next_request += 1;
             let id = format!("service_request:{name}:{}", s.next_request);
             let started = Instant::now();
-            tracing::info!(
+            tracing::debug!(target: "rosbridge_server_rs::service_calls",
                 connection = owner,
                 service = name,
                 request_id = id,

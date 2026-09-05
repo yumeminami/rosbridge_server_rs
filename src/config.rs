@@ -67,7 +67,7 @@ impl Default for Log {
             max_files: 7,
             console: true,
             timezone: Timezone::Local,
-            ansi: false,
+            ansi: true,
         }
     }
 }
@@ -212,6 +212,13 @@ pub fn load(args: &mut Args, matches: &ArgMatches) -> Result<Log> {
     }
     if let Some(ansi) = args.log_ansi {
         log.ansi = ansi;
+    }
+    if let Some(directory) = &log.directory
+        && let Ok(relative) = directory.strip_prefix("~")
+    {
+        let home =
+            std::env::var_os("HOME").context("HOME is unset; use an absolute log directory")?;
+        log.directory = Some(std::path::PathBuf::from(home).join(relative));
     }
     Ok(log)
 }
