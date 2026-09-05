@@ -2,8 +2,9 @@
 
 Rust rosbridge_server_rs 0.1.1 and Python rosbridge with rosapi ran concurrently
 on the same eight-core ARM64 SoC with ROS 2 Jazzy. The user confirmed both browser
-sessions subscribed to `/diagnostics`, `/head_mount/imu`, and `/head_mount/button`.
-The Python connection log confirms these topic names. Traffic reached both servers
+sessions subscribed to `/diagnostics`, `/imu`, and `/button`.
+Topic names are anonymized; the original subscriptions were checked against the
+Python connection log. Traffic reached both servers
 through the same host's Caddy proxy. No server was restarted for this measurement.
 The installed Python rosbridge version was not captured.
 

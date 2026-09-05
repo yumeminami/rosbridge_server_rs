@@ -28,7 +28,7 @@ params_timeout = 5.0
 # For read-only monitoring, uncomment all five settings below.
 # topics_glob = []
 # topics_pub_glob = []
-# topics_sub_glob = ["/diagnostics", "/head_mount/imu", "/head_mount/button"]
+# topics_sub_glob = ["/diagnostics", "/imu", "/button"]
 # services_glob = ["/rosapi/topics", "/rosapi/topics_and_raw_types", "/rosapi/topic_type", "/rosapi/message_details", "/rosapi/get_time", "/rosapi/get_ros_version"]
 # params_glob = []
 
