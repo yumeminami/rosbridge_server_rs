@@ -391,6 +391,16 @@ impl<B: Backend> Bridge<B> {
         Ok(())
     }
 
+    /// Whether ROS input or a pending response needs frequent polling.
+    pub fn needs_polling(&self) -> bool {
+        !self.subscriptions.is_empty()
+            || !self.calls.is_empty()
+            || !self.services.is_empty()
+            || !self.goals.is_empty()
+            || !self.action_servers.is_empty()
+            || !self.external.is_empty()
+    }
+
     pub fn tick(&mut self) -> Result<()> {
         for event in self.backend.poll()? {
             let result = match event {

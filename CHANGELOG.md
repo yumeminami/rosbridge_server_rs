@@ -38,6 +38,8 @@ Changes are recorded here before release. No version has been released yet.
 
 ### Changed
 
+- Reduce idle ROS worker polling from 500 to 10 wakeups per second; incoming
+  WebSocket commands still wake the worker immediately.
 - Document the Ubuntu native build dependencies in the README.
 - Separate topic, service and Action handling from protocol dispatch.
 - Separate WebSocket connection handling from the command-line entry point.

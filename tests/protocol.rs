@@ -138,6 +138,26 @@ fn receive(rx: &mut mpsc::Receiver<Vec<Message>>) -> Value {
 }
 
 #[test]
+fn polling_stops_after_last_subscription_is_removed() {
+    let (mut bridge, _rx) = setup();
+    assert!(!bridge.needs_polling());
+    bridge.command(
+        1,
+        json!({"op":"subscribe","topic":"/idle_test","type":"std_msgs/String"}),
+    );
+    assert!(bridge.needs_polling());
+    bridge.command(1, json!({"op":"unsubscribe","topic":"/idle_test"}));
+    assert!(!bridge.needs_polling());
+    bridge.command(
+        1,
+        json!({"op":"advertise_service","service":"/idle_service","type":"example_interfaces/AddTwoInts"}),
+    );
+    assert!(bridge.needs_polling());
+    bridge.disconnect(1);
+    assert!(!bridge.needs_polling());
+}
+
+#[test]
 fn advertisement_ids_and_disconnect_release_only_last_owner() {
     let (mut b, _) = setup();
     let (tx, _rx) = mpsc::channel(64);

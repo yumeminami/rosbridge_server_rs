@@ -54,7 +54,12 @@ pub(super) async fn run(args: Args) -> Result<()> {
             loop {
                 for i in 0..64 {
                     let command = if i == 0 {
-                        match receiver.recv_timeout(Duration::from_millis(2)) {
+                        let interval = if args.use_sim_time || bridge.needs_polling() {
+                            Duration::from_millis(2)
+                        } else {
+                            Duration::from_millis(100)
+                        };
+                        match receiver.recv_timeout(interval) {
                             Ok(c) => Some(c),
                             Err(mpsc::RecvTimeoutError::Timeout) => None,
                             Err(mpsc::RecvTimeoutError::Disconnected) => Some(Command::Shutdown),
