@@ -1,6 +1,8 @@
 # rosbridge_server_rs
 
 [![CI](https://github.com/yumeminami/rosbridge_server_rs/actions/workflows/ci.yml/badge.svg)](https://github.com/yumeminami/rosbridge_server_rs/actions/workflows/ci.yml)
+[![License: EPL-2.0 OR Apache-2.0](https://img.shields.io/badge/License-EPL--2.0%20OR%20Apache--2.0-blue)](LICENSE)
+[![ROS 2: Jazzy](https://img.shields.io/badge/ROS%202-Jazzy-blue)](docs/usage.md)
 
 **A fast, lightweight ROS 2 WebSocket server, written in Rust.**
 
