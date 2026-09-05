@@ -107,6 +107,19 @@ RSS was collected in a separate 30-sample observation: the Rust process versus t
 sum of Python WebSocket and rosapi processes; shared pages may be counted twice.
 [Samples and measurement limits](benchmarks/results/live/README.md)
 
+### ARM64 SoC: three live topics
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="benchmarks/results/soc/comparison-dark.svg">
+  <img alt="SoC process CPU and RSS over 61 seconds: Rust averages 21.72% CPU and 18 MiB RSS; Python plus rosapi averages 110.52% and 192.06 MiB." src="benchmarks/results/soc/comparison-light.svg" width="1000">
+</picture>
+
+Both browser sessions subscribed to `/diagnostics`, `/head_mount/imu` and
+`/head_mount/button`. Over 61.05 seconds, Rust averaged **21.72% CPU and 18.00 MiB
+RSS**, versus **110.52% and 192.06 MiB** for Python plus rosapi. CPU uses one core
+as 100%; RSS includes service processes only. Delivery rates and latency were not
+measured. [Raw samples and method](benchmarks/results/soc/README.md)
+
 ### Idle behavior
 
 <picture>

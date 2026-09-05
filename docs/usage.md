@@ -57,3 +57,13 @@ This is an early implementation, not a complete replacement for every component 
 - `long double` and non-finite floating-point JSON inputs are not supported.
 - Native ROS services cannot carry a browser-side failure as an exception response. Native callers should set a timeout.
 - Full roslibjs compatibility, other ROS distributions, macOS native builds, production load, and long-running stability have not been verified.
+
+## Logs
+
+Default INFO logs report server startup, client connection IDs and active counts,
+and successful topic subscriptions and unsubscriptions, including disconnect cleanup.
+Failed protocol operations log at ERROR with the connection, operation and resource
+name. Message payloads and individual topic deliveries are not logged.
+Use `RUST_LOG=warn` to suppress lifecycle messages or `RUST_LOG=debug` for debugging.
+Service calls and action goals run through the ROS worker; the server does not
+report Python-specific thread creation events.

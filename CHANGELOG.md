@@ -2,6 +2,12 @@
 
 Release history for rosbridge_server_rs.
 
+## Unreleased
+
+- Log client connections, active client counts, topic subscriptions and cleanup
+  at INFO, and failed protocol operations with their resource name at ERROR.
+- Add the 61-second ARM64 SoC CPU/RSS observation, raw samples and README charts.
+
 ## 0.1.1 — 2026-09-06
 
 ### Added

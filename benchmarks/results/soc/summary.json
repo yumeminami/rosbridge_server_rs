@@ -1,0 +1,25 @@
+{
+  "duration_seconds": 61.05,
+  "intervals": 60,
+  "cpu_percent_of_one_core": true,
+  "rust": {
+    "mean_cpu": 21.72,
+    "peak_cpu": 23.53,
+    "mean_rss_mib": 18.0
+  },
+  "python": {
+    "mean_cpu": 110.52,
+    "peak_cpu": 171.57,
+    "mean_rss_mib": 192.06
+  },
+  "python_ws": {
+    "mean_cpu": 77.82,
+    "peak_cpu": 83.33,
+    "mean_rss_mib": 125.19
+  },
+  "python_rosapi": {
+    "mean_cpu": 32.69,
+    "peak_cpu": 99.02,
+    "mean_rss_mib": 66.86
+  }
+}

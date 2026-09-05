@@ -222,6 +222,7 @@ impl<B: Backend> Bridge<B> {
 
     pub fn connect(&mut self, connection: Connection, output: Output) {
         self.outputs.insert(connection, output);
+        tracing::info!(connection, clients = self.outputs.len(), "Client connected");
     }
 
     fn unique(&mut self) -> String {
@@ -283,7 +284,17 @@ impl<B: Backend> Bridge<B> {
 
     pub fn command(&mut self, owner: Connection, v: Value) {
         if let Err(e) = self.execute(owner, &v) {
-            tracing::warn!(connection = owner, "{e:#}");
+            tracing::error!(
+                connection = owner,
+                op = v["op"].as_str().unwrap_or("unknown"),
+                resource = v
+                    .get("topic")
+                    .or_else(|| v.get("service"))
+                    .or_else(|| v.get("action"))
+                    .and_then(|value| value.as_str())
+                    .unwrap_or(""),
+                "Operation failed: {e:#}"
+            );
             self.error(owner, &v, &e);
         }
     }
@@ -517,7 +528,13 @@ impl<B: Backend> Bridge<B> {
     }
 
     pub fn disconnect(&mut self, owner: Connection) {
-        self.outputs.remove(&owner);
+        if self.outputs.remove(&owner).is_some() {
+            tracing::info!(
+                connection = owner,
+                clients = self.outputs.len(),
+                "Client disconnected"
+            );
+        }
         let topics: Vec<_> = self
             .publishers
             .iter()

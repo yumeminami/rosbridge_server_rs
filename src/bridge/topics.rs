@@ -148,6 +148,7 @@ impl<B: Backend> Bridge<B> {
                 pending: VecDeque::new(),
             });
         c.registrations.insert(id(v)?, options.clone());
+        tracing::info!(connection = owner, %topic, "Subscribed");
         let retained = new_client.then(|| s.retained.clone()).flatten();
         if let Some(message) = retained {
             c.last = Some(Instant::now());
@@ -185,6 +186,7 @@ impl<B: Backend> Bridge<B> {
             let s = self.subscriptions.remove(topic).unwrap();
             self.backend.destroy(s.entity);
         }
+        tracing::info!(connection = owner, %topic, "Unsubscribed");
         Ok(())
     }
 
