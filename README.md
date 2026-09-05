@@ -1,5 +1,7 @@
 # rosbridge_server_rs
 
+[![CI](https://github.com/yumeminami/rosbridge_server_rs/actions/workflows/ci.yml/badge.svg)](https://github.com/yumeminami/rosbridge_server_rs/actions/workflows/ci.yml)
+
 **A fast, lightweight ROS 2 WebSocket server, written in Rust.**
 
 Use the Python rosbridge protocol to publish and subscribe to topics, call services,
@@ -87,6 +89,9 @@ benchmarks/        Reproducible measurements and plots
 
 Use `cargo fmt` for Rust and `black --line-length 100` for Python. Keep native ROS
 handles on the worker thread; WebSocket tasks communicate through bounded queues.
+
+CI runs the same checks on pushes and pull requests, including the upstream
+WebSocket cases. See [CHANGELOG](CHANGELOG.md) for changes awaiting release.
 
 ## License
 

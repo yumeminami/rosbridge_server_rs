@@ -11,20 +11,25 @@
 
 """Execute the same upstream WebSocket assertions against both implementations."""
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
 from server import UPSTREAM, python_environment, server
 
-out = Path("benchmarks/results")
+out = Path(os.environ.get("ROSBRIDGE_TEST_RESULTS", "benchmarks/results"))
 out.mkdir(parents=True, exist_ok=True)
 rows = []
+executed = []
 selected = set(sys.argv[1:])
 if selected and (out / "parity.json").exists():
     rows = [
         row for row in json.loads((out / "parity.json").read_text()) if row["case"] not in selected
     ]
-for case in sorted((UPSTREAM / "rosbridge_server/test/websocket").glob("*.test.py")):
+cases = sorted((UPSTREAM / "rosbridge_server/test/websocket").glob("*.test.py"))
+if not cases or selected - {case.name for case in cases}:
+    sys.exit("No upstream cases found, or a requested case does not exist")
+for case in cases:
     if selected and case.name not in selected:
         continue
     for kind in ("python", "rust"):
@@ -54,6 +59,10 @@ for case in sorted((UPSTREAM / "rosbridge_server/test/websocket").glob("*.test.p
                     load.terminate()
                     load.wait(timeout=5)
             (out / (label + ".log")).write_text(output)
-            rows.append(dict(server=kind, case=case.name, status=status))
+            row = dict(server=kind, case=case.name, status=status)
+            rows.append(row)
+            executed.append(row)
             (out / "parity.json").write_text(json.dumps(rows, indent=2))
             print(label, status, flush=True)
+
+sys.exit(0 if all(row["status"] == "passed" for row in executed) else 1)

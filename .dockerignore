@@ -13,3 +13,6 @@ target
 .git
 .pytest_cache
 **/__pycache__
+
+/ci-results/
+/upstream/

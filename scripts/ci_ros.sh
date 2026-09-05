@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #
 # Copyright (c) 2026 Wing Mun Fung
 #
@@ -9,9 +10,9 @@
 # SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
 #
 
-/target/
-__pycache__/
-.pytest_cache/
-
-/ci-results/
-/upstream/
+set -eo pipefail
+bash scripts/test.sh --junitxml=/work/ci-results/websocket.xml
+source /opt/ros/jazzy/setup.bash
+source target/rosbridge-test-install/setup.bash
+cargo build --locked --release
+python3 benchmarks/parity.py
