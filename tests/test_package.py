@@ -66,8 +66,20 @@ async def check(binary):
                 await asyncio.sleep(0.1)
             else:
                 raise AssertionError("DDS subscription was not discovered")
-            publisher.publish(String(data="installed package works"))
-            reply = json.loads(await asyncio.wait_for(ws.recv(), 10))
+
+            # Discovery can report a reader before its volatile data path is ready.
+            # Exercise a live topic at 10 Hz rather than a single startup sample.
+            async def publish():
+                while True:
+                    publisher.publish(String(data="installed package works"))
+                    await asyncio.sleep(0.1)
+
+            publishing = asyncio.create_task(publish())
+            try:
+                reply = json.loads(await asyncio.wait_for(ws.recv(), 10))
+            finally:
+                publishing.cancel()
+                await asyncio.gather(publishing, return_exceptions=True)
             assert reply["op"] == "publish" and reply["topic"] == "/package_probe", reply
             assert reply["msg"]["data"] == "installed package works", reply
         finally:
