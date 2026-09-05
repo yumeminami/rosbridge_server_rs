@@ -11,51 +11,6 @@ and exchange Action goals. The server connects through native RCL/RMW and loads
 message definitions at runtime, including custom interfaces. No generated Rust
 message bindings or Python server process are required.
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="benchmarks/results/comparison-dark.svg">
-  <source media="(prefers-color-scheme: light)" srcset="benchmarks/results/comparison.svg">
-  <img alt="WebSocket throughput: Rust delivers 37,820, 27,761 and 2,588 messages per second for 64 B, 1 KiB and 64 KiB payloads; Python rosbridge 2.7.0 delivers 2,572, 2,435 and 1,336." src="benchmarks/results/comparison.svg" width="1000">
-</picture>
-
-Measured JSON topic roundtrips on Linux ARM64 / ROS 2 Jazzy, with 32 messages in flight. Rust release build versus **Python rosbridge 2.7.0**; three 2-second trials per configuration. These localhost measurements do not establish production capacity.
-
-[Method and reproduction](benchmarks/README.md) · [Latency, CPU, memory and raw results](benchmarks/results/README.md)
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="benchmarks/results/idle/comparison-dark.svg">
-  <img alt="Idle CPU and memory on Linux x86_64. All three trials are shown for Python rosbridge plus rosapi and Rust with native rosapi." src="benchmarks/results/idle/comparison-light.svg" width="1000">
-</picture>
-
-Same-host idle comparison, including rosapi: median CPU after unsubscribe was
-**0.40% for Rust and 0.80% for Python**; with a connection but no subscriptions,
-both were approximately **0.50%**. Three 10-second trials per state, with all
-first-trial spikes retained. This measures idle operation, not camera throughput.
-[Raw data, caveats and reproduction](benchmarks/results/idle/README.md).
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="benchmarks/results/live/comparison-dark.svg">
-  <img alt="Live diagnostics subscriptions: mean container CPU was 3.64% for Rust and 19.80% for Python plus rosapi across 30 samples." src="benchmarks/results/live/comparison-light.svg" width="1000">
-</picture>
-
-With two simultaneous browser sessions subscribing to `/diagnostics`, Rust used
-**82% less average container CPU** in this observation. Both servers ran on the
-same Linux x86_64 host with ROS 2 Jazzy. Thirty Docker snapshots were collected
-at approximately two-second intervals, without restarting either server.
-
-| Resource metric | Rust + native rosapi | Python + rosapi |
-| --- | ---: | ---: |
-| Mean container CPU | **3.64%** | 19.80% |
-| Median container CPU | **3.57%** | 14.61% |
-| Peak sampled container CPU | **4.63%** | 50.74% |
-| Mean service process RSS | **29.5 MiB** | 168.0 MiB |
-
-CPU is expressed as a percentage of one core. RSS measures the Rust server process
-and the sum of the Python WebSocket and rosapi processes, excluding launch and
-diagnostic processes. RSS comes from a separate, earlier 30-sample observation;
-summed RSS can count shared pages more than once. This is a live workload
-observation, not a controlled throughput, latency or frame-loss benchmark.
-[Raw samples and measurement limits](benchmarks/results/live/README.md).
-
 ## Install and run
 
 Requires **ROS 2 Humble on Ubuntu 22.04** or **ROS 2 Jazzy on Ubuntu 24.04**.
@@ -98,7 +53,7 @@ Options: [usage](docs/usage.md). Developers: [build from source](docs/building.m
 | Messages | Nested fields, arrays, bounded sequences, defaults and Base64 bytes |
 | Encoding | JSON, CBOR, CBOR-RAW, PNG and JSON fragmentation |
 
-**All 13 upstream WebSocket cases pass on both Rust and Python.** Additional tests
+**All 13 upstream WebSocket cases passed on both Rust and Python in the recorded Jazzy run.** Additional tests
 cover message conversion, resource ownership and error handling. See the
 [compatibility results](benchmarks/README.md#compatibility-results).
 
@@ -106,6 +61,59 @@ This is an early implementation and does not support all Python server
 configuration. Use absolute ROS names. Native macOS builds,
 other ROS distributions and production stability remain unverified.
 [Protocol boundaries](docs/usage.md#limitations) are documented explicitly.
+
+## Benchmarks
+
+Measured against Python rosbridge on ROS 2 Jazzy. Throughput, live subscriptions
+and idle behavior are separate experiments; their results should be read independently.
+
+### Topic throughput
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="benchmarks/results/comparison-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="benchmarks/results/comparison.svg">
+  <img alt="WebSocket throughput: Rust delivers 37,820, 27,761 and 2,588 messages per second for 64 B, 1 KiB and 64 KiB payloads; Python rosbridge 2.7.0 delivers 2,572, 2,435 and 1,336." src="benchmarks/results/comparison.svg" width="1000">
+</picture>
+
+JSON topic roundtrips on Linux ARM64, with 32 messages in flight: **37,820 vs
+2,572 messages/s** for a 64-byte payload. Rust release build versus Python
+rosbridge 2.7.0; three 2-second trials per configuration on localhost.
+[Method and reproduction](benchmarks/README.md) · [Full results](benchmarks/results/README.md)
+
+### Live subscriptions
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="benchmarks/results/live/comparison-dark.svg">
+  <img alt="Live diagnostics subscriptions: mean container CPU was 3.64% for Rust and 19.80% for Python plus rosapi across 30 samples." src="benchmarks/results/live/comparison-light.svg" width="1000">
+</picture>
+
+Two simultaneous browser sessions subscribed to `/diagnostics` on the same Linux
+x86_64 host. Both measurements include rosapi.
+
+| Mean resource use | Rust | Python |
+| --- | ---: | ---: |
+| Container CPU | **3.64%** | 19.80% |
+| Service process RSS | **29.5 MiB** | 168.0 MiB |
+
+CPU is relative to one core, sampled 30 times at approximately two-second intervals.
+RSS was collected in a separate 30-sample observation: the Rust process versus the
+sum of Python WebSocket and rosapi processes; shared pages may be counted twice.
+[Samples and measurement limits](benchmarks/results/live/README.md)
+
+### Idle behavior
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="benchmarks/results/idle/comparison-dark.svg">
+  <img alt="Idle CPU and memory on Linux x86_64. All three trials are shown for Python rosbridge plus rosapi and Rust with native rosapi." src="benchmarks/results/idle/comparison-light.svg" width="1000">
+</picture>
+
+After unsubscribe, median CPU was **0.40% for Rust vs 0.80% for Python**.
+With a connection and no subscriptions, both were approximately **0.50%**.
+Linux x86_64, including rosapi; three 10-second trials per state.
+[Samples and reproduction](benchmarks/results/idle/README.md)
+
+These measurements describe the tested workloads, not production capacity or
+camera-stream performance.
 
 ## Development
 
