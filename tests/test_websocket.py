@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
 #
 
-"""Real ROS 2 + WebSocket contract tests. No Python is used by the Rust server."""
+"""Real ROS 2 + WebSocket contract tests, including the managed rosapi node."""
 import asyncio
 import base64
 import io
@@ -91,6 +91,10 @@ def server(tmp_path_factory):
                 return False
 
         wait_until(ready)
+        children = subprocess.check_output(
+            ["ps", "--ppid", str(process.pid), "-o", "pid="], text=True
+        ).split()
+        assert len(children) == 1, "expected one managed rosapi child"
         yield f"ws://127.0.0.1:{port}"
         process.send_signal(signal.SIGINT)
         try:
@@ -100,6 +104,8 @@ def server(tmp_path_factory):
             process.wait()
             pytest.fail("server did not shut down")
         assert process.returncode == 0, log.read_text()
+        with pytest.raises(ProcessLookupError):
+            os.kill(int(children[0]), 0)
 
 
 async def send(ws, **message):
@@ -116,6 +122,23 @@ async def receive(ws, op=None):
 
 def unique(prefix):
     return "/" + prefix + "_" + uuid.uuid4().hex[:8]
+
+
+def test_managed_rosapi_accepts_legacy_type(server, ros):
+    wait_until(
+        lambda: any(name == "/rosapi/topics" for name, _ in ros.get_service_names_and_types())
+    )
+
+    async def run():
+        async with websockets.connect(server) as ws:
+            await send(
+                ws, op="call_service", service="/rosapi/topics", type="rosapi/Topics", args={}
+            )
+            response = await receive(ws, "service_response")
+            assert response["result"] is True, response
+            assert isinstance(response["values"]["topics"], list)
+
+    asyncio.run(run())
 
 
 def test_ros_to_websocket_and_back(server, ros):

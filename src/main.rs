@@ -14,6 +14,8 @@ use clap::Parser;
 use std::net::SocketAddr;
 
 #[cfg(feature = "ros2")]
+mod rosapi;
+#[cfg(feature = "ros2")]
 mod server;
 
 #[derive(Parser, Debug)]
@@ -27,6 +29,9 @@ struct Args {
     namespace: String,
     #[arg(long)]
     use_sim_time: bool,
+    /// Use an independently managed rosapi node instead of starting one.
+    #[arg(long)]
+    no_rosapi: bool,
     #[arg(long, default_value_t = 30.0)]
     service_timeout: f64,
     #[arg(long, default_value_t = 16777216)]
@@ -46,7 +51,18 @@ async fn main() -> Result<()> {
     let args = Args::parse();
     #[cfg(feature = "ros2")]
     {
-        server::run(args).await
+        if args.no_rosapi {
+            return server::run(args).await;
+        }
+        let mut rosapi = rosapi::start(args.use_sim_time)?;
+        let result = tokio::select! {
+            result = server::run(args) => result,
+            status = rosapi.wait() => {
+                Err(anyhow::anyhow!("rosapi exited unexpectedly: {}", status?))
+            }
+        };
+        rosapi.kill().await?;
+        result
     }
     #[cfg(not(feature = "ros2"))]
     {

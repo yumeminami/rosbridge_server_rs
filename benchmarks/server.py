@@ -32,7 +32,12 @@ def server(kind, log_path):
         sock.bind(("127.0.0.1", 0))
         port = sock.getsockname()[1]
     if kind == "rust":
-        command = ["target/release/rosbridge_server_rs", "--bind", f"127.0.0.1:{port}"]
+        command = [
+            "target/release/rosbridge_server_rs",
+            "--no-rosapi",
+            "--bind",
+            f"127.0.0.1:{port}",
+        ]
     else:
         command = [
             "python3",

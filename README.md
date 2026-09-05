@@ -28,7 +28,7 @@ native build dependencies:
 
 ```bash
 sudo apt update
-sudo apt install build-essential clang libclang-dev pkg-config libssl-dev
+sudo apt install build-essential clang libclang-dev pkg-config libssl-dev ros-jazzy-rosapi
 ```
 
 Install the ROS interface packages used by your application, including their C
@@ -42,6 +42,8 @@ cargo build --locked --release
 ```
 
 Connect your rosbridge client to `ws://127.0.0.1:9090`.
+The server starts a `rosapi` child node automatically and stops it on exit.
+Use `--no-rosapi` if you already run a separate rosapi node.
 See [configuration and examples](docs/usage.md) for CLI options and WebSocket usage.
 
 ## Protocol support
@@ -58,8 +60,8 @@ See [configuration and examples](docs/usage.md) for CLI options and WebSocket us
 cover message conversion, resource ownership and error handling. See the
 [compatibility results](benchmarks/README.md#compatibility-results).
 
-This is an early implementation. It does not replace the separate `rosapi` node or
-all Python server configuration. Use absolute ROS names. Native macOS builds,
+This is an early implementation. It uses the Python `rosapi` package for graph
+introspection and does not support all Python server configuration. Use absolute ROS names. Native macOS builds,
 other ROS distributions and production stability remain unverified.
 [Protocol boundaries](docs/usage.md#limitations) are documented explicitly.
 
