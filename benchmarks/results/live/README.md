@@ -13,8 +13,8 @@ with `docker stats --no-stream --format '{{json .}}'` for `rosbridge_server_rs`
 and `rd001-rosbridge-1`. Each command sampled both containers and took approximately
 two seconds. Timestamps mark the start of each command, not individual CPU counters.
 Means and medians are calculated from the reported Docker CPU percentages; peaks
-are the largest sampled values, not continuous maxima. Memory in the root README
-is the final snapshot. The Python container includes rosbridge, rosapi and its ROS
+are the largest sampled values, not continuous maxima. The memory column in the root README uses process RSS from a separate round,
+not Docker memory. The Python container includes rosbridge, rosapi and its ROS
 launch process; the Rust container includes the native server and shell/diagnostic
 processes. Container statistics include all processes, not only the servers.
 
@@ -31,12 +31,27 @@ schedules were not controlled; matching topic names does not establish identical
 message delivery, QoS, throttling or rosapi request rates. No throughput, latency,
 dropped-message or frame-loss measurements were collected.
 
-Docker memory is not server RSS. A separate cgroup snapshot showed approximately
-402 MiB of active file cache in the Rust container. In the earlier round, average
-RSS was 29.5 MiB for the Rust process and 168.0 MiB summed across Python WebSocket
-and rosapi processes, excluding the Python launch process. Those are different
-measurements from the final Docker memory values and must not be compared directly;
-summed RSS can also count shared pages more than once.
+## Process memory
+
+[rss.json](rss.json) preserves all 30 process RSS samples from the earlier
+61.74-second observation. RSS was read from `/proc/<pid>/stat` (resident pages
+multiplied by the system page size). The README reports the arithmetic mean:
+
+| Service processes | Mean RSS |
+| --- | ---: |
+| Rust server | 29.5 MiB |
+| Python WebSocket + rosapi | 168.0 MiB |
+
+The Python value sums the two service processes in each sample before averaging.
+Shells, the Python launch process and ROS CLI diagnostic processes are excluded.
+RSS counts resident process pages; summing processes can count shared pages more
+than once, so this is not unique physical memory (PSS).
+
+These samples came from the earlier round that overlapped ROS node inspection.
+Its container CPU values were excluded, but the service RSS samples are retained
+here with that context. RSS and the final CPU comparison were not collected in the
+same interval. Docker memory values remain in the raw Docker snapshots for provenance
+but are not presented as service memory usage.
 
 Regenerate the light and dark figures with `python3 benchmarks/plot_live.py`
 (requires Matplotlib). To repeat the observation, keep one browser connected to

@@ -1,0 +1,186 @@
+{
+  "duration_seconds": 61.73867346532643,
+  "measurement": "Earlier process sampling round; separate from cpu.json",
+  "samples": [
+    {
+      "elapsed": 1.8507555671967566,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97714176,
+      "python_rosapi_rss_bytes": 78336000
+    },
+    {
+      "elapsed": 3.925340821966529,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97714176,
+      "python_rosapi_rss_bytes": 78336000
+    },
+    {
+      "elapsed": 5.991203428246081,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97845248,
+      "python_rosapi_rss_bytes": 78336000
+    },
+    {
+      "elapsed": 8.050383657217026,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97845248,
+      "python_rosapi_rss_bytes": 78336000
+    },
+    {
+      "elapsed": 10.103258362971246,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97845248,
+      "python_rosapi_rss_bytes": 78336000
+    },
+    {
+      "elapsed": 12.162223272956908,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97845248,
+      "python_rosapi_rss_bytes": 78336000
+    },
+    {
+      "elapsed": 14.207590102218091,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97845248,
+      "python_rosapi_rss_bytes": 78336000
+    },
+    {
+      "elapsed": 16.268978185020387,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97845248,
+      "python_rosapi_rss_bytes": 78336000
+    },
+    {
+      "elapsed": 18.34946233825758,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97845248,
+      "python_rosapi_rss_bytes": 78336000
+    },
+    {
+      "elapsed": 20.42300397902727,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97845248,
+      "python_rosapi_rss_bytes": 78336000
+    },
+    {
+      "elapsed": 22.47441664431244,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97845248,
+      "python_rosapi_rss_bytes": 78336000
+    },
+    {
+      "elapsed": 24.534060996957123,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97845248,
+      "python_rosapi_rss_bytes": 78336000
+    },
+    {
+      "elapsed": 26.608531973324716,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97845248,
+      "python_rosapi_rss_bytes": 78336000
+    },
+    {
+      "elapsed": 28.650578790344298,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97673216,
+      "python_rosapi_rss_bytes": 78336000
+    },
+    {
+      "elapsed": 30.732932914979756,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97673216,
+      "python_rosapi_rss_bytes": 78336000
+    },
+    {
+      "elapsed": 32.797462622169405,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97673216,
+      "python_rosapi_rss_bytes": 78336000
+    },
+    {
+      "elapsed": 34.83837778912857,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97673216,
+      "python_rosapi_rss_bytes": 78336000
+    },
+    {
+      "elapsed": 36.897613428067416,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97673216,
+      "python_rosapi_rss_bytes": 78336000
+    },
+    {
+      "elapsed": 38.97180540300906,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97673216,
+      "python_rosapi_rss_bytes": 78336000
+    },
+    {
+      "elapsed": 41.04562233295292,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97673216,
+      "python_rosapi_rss_bytes": 78336000
+    },
+    {
+      "elapsed": 43.12789065996185,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97673216,
+      "python_rosapi_rss_bytes": 78336000
+    },
+    {
+      "elapsed": 45.197820138186216,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97804288,
+      "python_rosapi_rss_bytes": 78336000
+    },
+    {
+      "elapsed": 47.270666268188506,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97804288,
+      "python_rosapi_rss_bytes": 78336000
+    },
+    {
+      "elapsed": 49.34107931796461,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97804288,
+      "python_rosapi_rss_bytes": 78336000
+    },
+    {
+      "elapsed": 51.39967484911904,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97804288,
+      "python_rosapi_rss_bytes": 78336000
+    },
+    {
+      "elapsed": 53.47792808525264,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97804288,
+      "python_rosapi_rss_bytes": 78336000
+    },
+    {
+      "elapsed": 55.55197676317766,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97804288,
+      "python_rosapi_rss_bytes": 78336000
+    },
+    {
+      "elapsed": 57.59627555729821,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97804288,
+      "python_rosapi_rss_bytes": 78336000
+    },
+    {
+      "elapsed": 59.664300196338445,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97804288,
+      "python_rosapi_rss_bytes": 78336000
+    },
+    {
+      "elapsed": 61.73867346532643,
+      "rust_rss_bytes": 30945280,
+      "python_websocket_rss_bytes": 97804288,
+      "python_rosapi_rss_bytes": 78336000
+    }
+  ]
+}

@@ -42,15 +42,17 @@ With two simultaneous browser sessions subscribing to `/diagnostics`, Rust used
 same Linux x86_64 host with ROS 2 Jazzy. Thirty Docker snapshots were collected
 at approximately two-second intervals, without restarting either server.
 
-| Container metric | Rust + native rosapi | Python + rosapi |
+| Resource metric | Rust + native rosapi | Python + rosapi |
 | --- | ---: | ---: |
-| Mean CPU | **3.64%** | 19.80% |
-| Median CPU | **3.57%** | 14.61% |
-| Peak sampled CPU | **4.63%** | 50.74% |
-| Final Docker memory | 514.2 MiB | **153.7 MiB** |
+| Mean container CPU | **3.64%** | 19.80% |
+| Median container CPU | **3.57%** | 14.61% |
+| Peak sampled container CPU | **4.63%** | 50.74% |
+| Mean service process RSS | **29.5 MiB** | 168.0 MiB |
 
-CPU is expressed as a percentage of one core. Container memory includes more than
-server RSS; the Rust container had substantial file cache. This is a live workload
+CPU is expressed as a percentage of one core. RSS measures the Rust server process
+and the sum of the Python WebSocket and rosapi processes, excluding launch and
+diagnostic processes. RSS comes from a separate, earlier 30-sample observation;
+summed RSS can count shared pages more than once. This is a live workload
 observation, not a controlled throughput, latency or frame-loss benchmark.
 [Raw samples and measurement limits](benchmarks/results/live/README.md).
 
