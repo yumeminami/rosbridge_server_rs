@@ -40,8 +40,7 @@ uvx rosbridge_server_rs
 ```
 
 Source your ROS environment first. uv selects x86_64 or ARM64 automatically;
-the launcher reads `$ROS_DISTRO` to select Humble or Jazzy. These commands require
-the v0.1.1 wheels to be published on PyPI; the first publication is pending.
+the launcher reads `$ROS_DISTRO` to select Humble or Jazzy.
 
 Use the `arm64` filename on ARM64. Connect your client to `ws://localhost:9090`
 (or the server's IP address). All 29 rosapi services are built in.

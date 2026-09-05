@@ -25,7 +25,7 @@ Source your workspace before starting if you use custom message packages.
 Archives require the same external ROS runtime libraries. `SHA256SUMS` covers
 all release packages.
 
-Once the wheels are published to PyPI, install with
+Install from PyPI with
 `uv tool install rosbridge_server_rs`, then run `rosbridge_server_rs`, or use
 `uvx rosbridge_server_rs` directly. Source the ROS environment first. uv selects
 the architecture, and the launcher selects the binary using `$ROS_DISTRO`.
