@@ -1,24 +1,26 @@
 # Installation
 
-Version 0.1.0 targets Ubuntu 24.04 with ROS 2 Jazzy on amd64 and arm64.
-Install ROS 2 Jazzy and configure its apt repository first, following the
-[ROS installation guide](https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html).
+Version 0.1.1 targets ROS 2 Humble on Ubuntu 22.04 and ROS 2 Jazzy on Ubuntu
+24.04, on amd64 and arm64. Install ROS and configure its apt repository first,
+following the [Humble](https://docs.ros.org/en/humble/Installation.html) or
+[Jazzy](https://docs.ros.org/en/jazzy/Installation.html) installation guide.
 No Rust compiler or Python rosbridge server is needed.
 
 ## Debian package
 
 Download the package matching `dpkg --print-architecture` from
-[the release page](https://github.com/yumeminami/rosbridge_server_rs/releases/tag/v0.1.0).
+[the release page](https://github.com/yumeminami/rosbridge_server_rs/releases/tag/v0.1.1).
 
 ```bash
-sudo apt install ./rosbridge-server-rs_0.1.0_ubuntu24.04_amd64.deb
+sudo apt install ./rosbridge-server-rs_0.1.1_jazzy_ubuntu24.04_amd64.deb
 source /opt/ros/jazzy/setup.bash
 rosbridge_server_rs
 ```
 
-For ARM64, replace `amd64` with `arm64`. APT installs declared runtime dependencies
+For Humble use `humble_ubuntu22.04`; for ARM64 use `arm64`. APT installs dependencies
 from your configured repositories. The package installs `/usr/bin/rosbridge_server_rs`;
-it does not start a background service. Download and install a newer `.deb` to upgrade.
+`rosbridge-server-rs` is an equivalent command. The package does not start a
+background service. Download and install a newer `.deb` to upgrade.
 There is no project apt repository yet.
 
 ```bash
@@ -28,14 +30,13 @@ sudo apt remove rosbridge-server-rs
 ## Binary archive
 
 Download the matching `.tar.gz` from the same release page. Archives contain the
-binary, license and README; they do not bundle ROS or system libraries. On an
-Ubuntu 24.04 host with Jazzy installed:
+binary, license and README; they do not bundle ROS or system libraries. On a
+supported host with ROS installed:
 
 ```bash
-sudo apt install ros-jazzy-rosapi-msgs ros-jazzy-rcl ros-jazzy-rcl-action \
-  ros-jazzy-rcl-interfaces ros-jazzy-rosgraph-msgs ros-jazzy-rmw-fastrtps-cpp
-tar -xzf rosbridge-server-rs_0.1.0_ubuntu24.04_amd64.tar.gz
-source /opt/ros/jazzy/setup.bash
+sudo apt install ros-$ROS_DISTRO-rosapi-msgs
+tar -xzf rosbridge-server-rs_0.1.1_jazzy_ubuntu24.04_amd64.tar.gz
+source /opt/ros/$ROS_DISTRO/setup.bash
 ./rosbridge_server_rs
 ```
 
@@ -59,5 +60,26 @@ Native rosapi is enabled by default. Use `--no-rosapi` when another node already
 provides `/rosapi/*`. See [usage](usage.md) for options and limitations.
 
 Custom message packages must be installed, including their C introspection and
-typesupport libraries. Source their workspace after `/opt/ros/jazzy/setup.bash`.
-Python package distribution through uv/uvx is not provided in this release.
+typesupport libraries. Source their workspace after the ROS setup file.
+
+## uv and uvx
+
+Download both `.whl` files from the release page into a `dist` directory. uv
+uses their standard platform tags to select x86_64 or ARM64. The launcher reads
+`$ROS_DISTRO` to select its Humble or Jazzy binary:
+
+```bash
+source /opt/ros/$ROS_DISTRO/setup.bash
+uvx --no-index --find-links ./dist rosbridge-server-rs
+```
+
+For a persistent command:
+
+```bash
+uv tool install --no-index --find-links ./dist rosbridge-server-rs
+rosbridge_server_rs
+```
+
+The wheel contains the native executable; it does not install ROS system
+packages. Install Humble or Jazzy and `ros-$ROS_DISTRO-rosapi-msgs` first. Using
+both wheel files in the same directory lets uv select the architecture automatically.

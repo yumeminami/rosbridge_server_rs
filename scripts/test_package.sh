@@ -10,17 +10,20 @@
 # SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
 #
 
-# Run inside a fresh ros:jazzy-ros-core container with /dist and /tests mounted.
+# Run inside a fresh ROS core container with /dist and /tests mounted.
 set -eo pipefail
-apt-get update
-apt-get install -y --no-install-recommends /dist/*.deb python3-websockets
-source /opt/ros/jazzy/setup.bash
+package_dir=${PACKAGE_DIR:-/dist}
+apt-get -o Acquire::Retries=3 update
+apt-get -o Acquire::Retries=3 install -y --no-install-recommends \
+    "$package_dir"/*_"$ROS_DISTRO"_*.deb python3-websockets
+source "/opt/ros/$ROS_DISTRO/setup.bash"
 export ROS_DOMAIN_ID=87 ROS_LOCALHOST_ONLY=1
 rosbridge_server_rs --version
-python3 /tests/test_package.py /usr/bin/rosbridge_server_rs
+rosbridge-server-rs --version
+python3 "$(dirname "$0")/../tests/test_package.py" /usr/bin/rosbridge_server_rs
 # Verify the archive also runs without the development workspace.
-mkdir /tmp/rosbridge-archive
-tar -xzf /dist/*.tar.gz -C /tmp/rosbridge-archive
-python3 /tests/test_package.py /tmp/rosbridge-archive/rosbridge_server_rs
+mkdir -p /tmp/rosbridge-archive
+tar -xzf "$package_dir"/*_"$ROS_DISTRO"_*.tar.gz -C /tmp/rosbridge-archive
+python3 "$(dirname "$0")/../tests/test_package.py" /tmp/rosbridge-archive/rosbridge_server_rs
 apt-get remove -y rosbridge-server-rs
 test ! -e /usr/bin/rosbridge_server_rs

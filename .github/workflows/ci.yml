@@ -52,7 +52,7 @@ jobs:
       - name: Python format
         run: |
           python -m pip install black==23.1.0
-          python -m black --check --line-length 100 benchmarks/*.py tests/*.py
+          python -m black --check --line-length 100 benchmarks/*.py tests/*.py scripts/*.py
       - name: Shell syntax
         run: |
           for script in scripts/*.sh benchmarks/run.sh; do
@@ -66,19 +66,29 @@ jobs:
         run: python -m unittest discover -s tests -p test_parity_runner.py
 
   ros2:
-    name: ROS 2 Jazzy (${{ matrix.arch }})
+    name: ROS 2 ${{ matrix.distro }} (${{ matrix.arch }})
     strategy:
       fail-fast: false
       matrix:
         include:
           - arch: x86_64
+            distro: humble
             runner: ubuntu-24.04
           - arch: arm64
+            distro: humble
+            runner: ubuntu-24.04-arm
+          - arch: x86_64
+            distro: jazzy
+            runner: ubuntu-24.04
+          - arch: arm64
+            distro: jazzy
             runner: ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 35
     env:
       ROSBRIDGE_SUITE_PATH: ${{ github.workspace }}/upstream
+      ROS_DISTRO: ${{ matrix.distro }}
+      CI_CONTAINER_SUFFIX: ${{ github.run_id }}-${{ matrix.arch }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -94,43 +104,87 @@ jobs:
         shell: bash
         run: |
           mkdir -p ci-results
-          docker compose run --build --rm \
-            -e ROSBRIDGE_TEST_RESULTS=/work/ci-results/upstream \
-            test bash scripts/ci_ros.sh 2>&1 | tee ci-results/ros2.log
+          bash scripts/ci_container.sh "${{ matrix.distro }}" 2>&1 | tee ci-results/ros2.log
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ros2-jazzy-results-${{ matrix.arch }}
+          name: ros2-${{ matrix.distro }}-results-${{ matrix.arch }}
           path: ci-results/
           retention-days: 14
           if-no-files-found: warn
-      - name: Package release binaries
-        env:
-          GITHUB_REF_TYPE: ${{ github.ref_type }}
-          GITHUB_REF_NAME: ${{ github.ref_name }}
-        run: |
-          docker compose run --rm -e GITHUB_REF_TYPE -e GITHUB_REF_NAME \
-            test bash scripts/package.sh
-      - name: Test installation in a clean runtime container
-        run: |
-          docker run --rm \
-            -v "$PWD/ci-results/dist:/dist:ro" \
-            -v "$PWD/scripts:/scripts:ro" \
-            -v "$PWD/tests:/tests:ro" \
-            ros:jazzy-ros-core bash /scripts/test_package.sh
       - name: Upload release packages
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: rosbridge_server_rs-linux-${{ matrix.arch }}
+          name: rosbridge_server_rs-${{ matrix.distro }}-${{ matrix.arch }}
           path: ci-results/dist/
+          retention-days: 14
+          if-no-files-found: error
+
+  wheels:
+    name: uv wheel (${{ matrix.arch }})
+    needs: ros2
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: '0.10.7'
+      - name: Download tested binaries
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          gh run download "$RUN_ID" \
+            --pattern 'rosbridge_server_rs-*-${{ matrix.arch }}' --dir dist
+      - name: Build architecture wheel
+        run: |
+          version=$(python3 -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["package"]["version"])')
+          mkdir -p wheel-bin/humble wheel-bin/jazzy wheel
+          tar -xzf dist/rosbridge_server_rs-humble-${{ matrix.arch }}/*humble*.tar.gz \
+            -C wheel-bin/humble
+          tar -xzf dist/rosbridge_server_rs-jazzy-${{ matrix.arch }}/*jazzy*.tar.gz \
+            -C wheel-bin/jazzy
+          python3 scripts/package_wheel.py "$version" "${{ matrix.arch }}" \
+            wheel-bin/humble/rosbridge_server_rs wheel-bin/jazzy/rosbridge_server_rs wheel
+      - name: Test ROS distribution and architecture selection
+        run: |
+          for distro in humble jazzy; do
+            docker run --rm \
+              -e UV_TOOL_BIN_DIR=/tmp/uv-bin \
+              -v "$(command -v uv):/usr/local/bin/uv:ro" \
+              -v "$(command -v uvx):/usr/local/bin/uvx:ro" \
+              -v "$PWD/wheel:/wheel:ro" \
+              -v "$PWD/scripts:/scripts:ro" \
+              "ros:$distro-ros-core" bash /scripts/test_wheel.sh
+          done
+      - name: Upload tested wheel
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: rosbridge_server_rs-wheel-${{ matrix.arch }}
+          path: wheel/*.whl
           retention-days: 14
           if-no-files-found: error
 
   release:
     name: Publish GitHub Release
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [checks, ros2]
+    needs: [checks, ros2, wheels]
     runs-on: ubuntu-24.04
     permissions:
       actions: read
@@ -144,7 +198,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           RUN_ID: ${{ github.run_id }}
-        run: gh run download "$RUN_ID" --pattern 'rosbridge_server_rs-linux-*' --dir dist
+        run: gh run download "$RUN_ID" --pattern 'rosbridge_server_rs-*' --dir dist
       - name: Publish tested assets
         env:
           GH_TOKEN: ${{ github.token }}
@@ -153,6 +207,7 @@ jobs:
         run: |
           cd dist
           cat */SHA256SUMS-* > SHA256SUMS
+          sha256sum */*.whl | sed 's#  .*/#  #' >> SHA256SUMS
           gh release create "$RELEASE_TAG" --verify-tag --prerelease \
             --title "$RELEASE_TAG" --notes-file ../docs/release-notes.md \
-            */*.deb */*.tar.gz SHA256SUMS
+            */*.deb */*.tar.gz */*.whl SHA256SUMS

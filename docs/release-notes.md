@@ -1,36 +1,45 @@
-# rosbridge_server_rs 0.1.0
+# rosbridge_server_rs 0.1.1
 
-First early release of the Rust ROS 2 rosbridge WebSocket server.
+Adds uv/uvx distribution and ROS 2 Humble support to the Rust rosbridge server.
 
 - Topic, service and Action operations using the Python rosbridge wire protocol.
 - All 29 native rosapi service interfaces, with no Python rosapi subprocess.
 - Runtime message introspection, including custom message packages.
 - JSON, CBOR, CBOR-RAW, PNG and fragmentation support.
-- Ubuntu 24.04 / ROS 2 Jazzy packages for amd64 and arm64.
+- Humble / Ubuntu 22.04 and Jazzy / Ubuntu 24.04 packages for amd64 and arm64.
+- Platform wheels that select the architecture and `$ROS_DISTRO` at runtime.
 
 ## Install
 
-With ROS 2 Jazzy installed and its apt repository configured, download the `.deb`
-for your architecture and run:
+With Humble or Jazzy installed, download the matching `.deb` and run:
 
 ```bash
-sudo apt install ./rosbridge-server-rs_0.1.0_ubuntu24.04_amd64.deb
+sudo apt install ./rosbridge-server-rs_0.1.1_jazzy_ubuntu24.04_amd64.deb
 source /opt/ros/jazzy/setup.bash
 rosbridge_server_rs
 ```
 
-Use the `arm64` filename on ARM64. Connect to `ws://localhost:9090`.
+Use `humble_ubuntu22.04` for Humble and `arm64` on ARM64. Connect to
+`ws://localhost:9090`.
 Source your workspace before starting if you use custom message packages.
 Archives require the same external ROS runtime libraries. `SHA256SUMS` covers
-all four packages.
+all release packages.
+
+For uv/uvx, download both wheel files into one directory. uv selects the current
+architecture from the wheel tags and `$ROS_DISTRO` for Humble or Jazzy:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+uvx --no-index --find-links ./dist rosbridge-server-rs
+```
 
 ## Scope
 
 This early release does not establish long-running production stability or
 complete compatibility with every Python rosbridge configuration. Use absolute
-ROS names. TLS and authentication require a reverse proxy. Other ROS distributions
-and native macOS/Windows are not supported by these packages.
+ROS names. TLS and authentication require a reverse proxy. ROS distributions other
+than Humble and Jazzy, and native macOS/Windows, are not supported by these packages.
 
 CI gates release publication on formatting, protocol and ROS integration tests,
-upstream WebSocket compatibility, and clean-runtime package smoke tests on both
-architectures. See CHANGELOG.md and docs/usage.md for details.
+upstream WebSocket compatibility, and package smoke tests for both
+distributions and architectures. See CHANGELOG.md and docs/usage.md for details.

@@ -175,7 +175,7 @@ def test_runtime_type_conversion(server, ros, message_type):
         async with websockets.connect(server) as ws:
             typ = f"test_msgs/msg/{message_type.__name__}"
             await send(ws, op="advertise", topic=topic, type=typ)
-            await asyncio.to_thread(wait_until, lambda: sub.get_publisher_count() > 0)
+            await asyncio.to_thread(wait_until, lambda: ros.count_publishers(topic) > 0)
             fields = (
                 {"int32_value": -123}
                 if message_type is BasicTypes
@@ -202,7 +202,7 @@ def test_defaults_header_and_validation(server, ros):
     async def run():
         async with websockets.connect(server) as ws:
             await send(ws, op="advertise", topic=topic, type="geometry_msgs/PoseStamped")
-            await asyncio.to_thread(wait_until, lambda: sub.get_publisher_count() > 0)
+            await asyncio.to_thread(wait_until, lambda: ros.count_publishers(topic) > 0)
             await send(ws, op="publish", topic=topic, msg={"pose": {"position": {"x": 1.5}}})
             await asyncio.to_thread(wait_until, lambda: bool(received))
             assert received[0].header.stamp.sec > 0

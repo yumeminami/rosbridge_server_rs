@@ -185,12 +185,14 @@ fn qos(q: Qos) -> rmw_qos_profile_t {
         reliability: match q.reliability {
             1 => RMW_QOS_POLICY_RELIABILITY_RELIABLE,
             2 => RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT,
+            #[cfg(not(ros_humble))]
             4 => RMW_QOS_POLICY_RELIABILITY_BEST_AVAILABLE,
             _ => RMW_QOS_POLICY_RELIABILITY_SYSTEM_DEFAULT,
         },
         durability: match q.durability {
             1 => RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL,
             2 => RMW_QOS_POLICY_DURABILITY_VOLATILE,
+            #[cfg(not(ros_humble))]
             4 => RMW_QOS_POLICY_DURABILITY_BEST_AVAILABLE,
             _ => RMW_QOS_POLICY_DURABILITY_SYSTEM_DEFAULT,
         },

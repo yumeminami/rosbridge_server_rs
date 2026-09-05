@@ -11,7 +11,7 @@
 #
 
 # Source this file from the repository root inside the test container.
-source /opt/ros/jazzy/setup.bash
+source "/opt/ros/$ROS_DISTRO/setup.bash"
 colcon --log-base /tmp/rosbridge-colcon-log build \
     --base-paths /upstream/rosbridge_test_msgs \
     --build-base /tmp/rosbridge-build \

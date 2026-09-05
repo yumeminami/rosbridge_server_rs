@@ -3,7 +3,7 @@
 The server provides all 29 `rosapi_msgs` service interfaces inside its existing
 Rust ROS node. No Python process or second ROS context is started. Services use
 the `/rosapi` prefix; the owning node is the bridge node. Install
-`ros-jazzy-rosapi-msgs` and source the ROS workspaces containing your interfaces.
+`ros-$ROS_DISTRO-rosapi-msgs` and source the ROS workspaces containing your interfaces.
 
 | Area | Services |
 | --- | --- |

@@ -18,7 +18,8 @@ Arguments after `--` are forwarded to RCL:
 ./target/release/rosbridge_server_rs -- --ros-args -r __node:=bridge
 ```
 
-ROS uses the configured `ROS_DOMAIN_ID` and `RMW_IMPLEMENTATION`. The tested environment is Linux ARM64 with the default RMW in the ROS 2 Jazzy container; other RMW implementations have not been verified.
+ROS uses the configured `ROS_DOMAIN_ID` and `RMW_IMPLEMENTATION`. Release CI tests
+Humble and Jazzy on Linux x86_64 and ARM64. Packages accept Cyclone DDS or Fast DDS.
 
 ## WebSocket example
 
@@ -40,10 +41,14 @@ ws.onopen = () => {
 
 ## Limitations
 
+On Humble, `best_available` QoS uses the RMW system default. Parameter service
+responses follow the installed Humble interfaces, which omit `successful` and
+`reason`; Jazzy responses retain those fields.
+
 This is an early implementation, not a complete replacement for every component of rosbridge_suite.
 
 - All 29 rosapi service interfaces run inside the Rust ROS worker. Install
-  `ros-jazzy-rosapi-msgs` for their C type support. Use `--no-rosapi` when another
+  `ros-$ROS_DISTRO-rosapi-msgs` for their C type support. Use `--no-rosapi` when another
   node provides them. See [rosapi](rosapi.md) for configuration and compatibility notes.
 - Use absolute topic, service, and Action names. Relative names resolve from `/`; private names and full namespace semantics are not supported.
 - TLS and authentication are not built in. Use a reverse proxy for WSS.

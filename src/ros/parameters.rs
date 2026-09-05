@@ -46,9 +46,25 @@ impl Api {
                 } else {
                     default
                 };
-                json!({"value":result.to_string(),"successful":error.is_none(),"reason":error.unwrap_or_default()})
+                #[cfg(ros_humble)]
+                {
+                    json!({"value":result.to_string()})
+                }
+                #[cfg(not(ros_humble))]
+                {
+                    json!({"value":result.to_string(),"successful":error.is_none(),"reason":error.unwrap_or_default()})
+                }
             }
-            _ => json!({"successful":error.is_none(),"reason":error.unwrap_or_default()}),
+            _ => {
+                #[cfg(ros_humble)]
+                {
+                    json!({})
+                }
+                #[cfg(not(ros_humble))]
+                {
+                    json!({"successful":error.is_none(),"reason":error.unwrap_or_default()})
+                }
+            }
         };
         ros.respond(group.service, group.request, &response)
     }

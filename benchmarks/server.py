@@ -41,7 +41,7 @@ def server(kind, log_path):
     else:
         command = [
             "python3",
-            "/opt/ros/jazzy/lib/rosbridge_server/rosbridge_websocket",
+            f"/opt/ros/{os.environ['ROS_DISTRO']}/lib/rosbridge_server/rosbridge_websocket",
             "--ros-args",
             "-p",
             f"port:={port}",

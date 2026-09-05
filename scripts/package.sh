@@ -10,10 +10,15 @@
 # SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
 #
 
-# Package the native release build on Ubuntu 24.04 with ROS 2 Jazzy installed.
+# Package a native release build in its supported ROS distribution container.
 set -euo pipefail
-version=$(python3 -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["package"]["version"])')
+version=$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -n 1)
 arch=$(dpkg --print-architecture)
+case "$ROS_DISTRO" in
+    humble) ubuntu=22.04 ;;
+    jazzy) ubuntu=24.04 ;;
+    *) echo "Unsupported ROS distribution: $ROS_DISTRO" >&2; exit 1 ;;
+esac
 case "$arch" in
     amd64|arm64) ;;
     *) echo "Unsupported release architecture: $arch" >&2; exit 1 ;;
@@ -26,9 +31,10 @@ output="$PWD/ci-results/dist"
 mkdir -p "$output"
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
-name="rosbridge-server-rs_${version}_ubuntu24.04_${arch}"
+name="rosbridge-server-rs_${version}_${ROS_DISTRO}_ubuntu${ubuntu}_${arch}"
 root="$work/$name"
 install -Dm755 target/release/rosbridge_server_rs "$root/usr/bin/rosbridge_server_rs"
+ln -s rosbridge_server_rs "$root/usr/bin/rosbridge-server-rs"
 strip "$root/usr/bin/rosbridge_server_rs"
 install -Dm644 LICENSE "$root/usr/share/doc/rosbridge-server-rs/copyright"
 install -Dm644 README.md "$root/usr/share/doc/rosbridge-server-rs/README.md"
@@ -45,7 +51,7 @@ Description: ROS 2 rosbridge WebSocket server written in Rust
 CONTROL
 # Resolve ELF dependencies from the installed distribution packages. Runtime-loaded
 # interface libraries and the default RMW must be declared separately.
-depends=$(cd "$work" && dpkg-shlibdeps -O -l/opt/ros/jazzy/lib -e"$root/usr/bin/rosbridge_server_rs")
+depends=$(cd "$work" && dpkg-shlibdeps -O -l"/opt/ros/$ROS_DISTRO/lib" -e"$root/usr/bin/rosbridge_server_rs")
 depends=${depends#shlibs:Depends=}
 cat > "$root/DEBIAN/control" <<CONTROL
 Package: rosbridge-server-rs
@@ -55,13 +61,13 @@ Priority: optional
 Architecture: $arch
 Maintainer: Wing Mun Fung <yumeminami@users.noreply.github.com>
 Homepage: https://github.com/yumeminami/rosbridge_server_rs
-Depends: $depends, ros-jazzy-rcl, ros-jazzy-rcl-action, ros-jazzy-rmw-implementation, ros-jazzy-rosidl-runtime-c, ros-jazzy-rosapi-msgs, ros-jazzy-rcl-interfaces, ros-jazzy-rosgraph-msgs, ros-jazzy-rmw-fastrtps-cpp
+Depends: $depends, ros-$ROS_DISTRO-rcl, ros-$ROS_DISTRO-rcl-action, ros-$ROS_DISTRO-rmw-implementation, ros-$ROS_DISTRO-rosidl-runtime-c, ros-$ROS_DISTRO-rosapi-msgs, ros-$ROS_DISTRO-rcl-interfaces, ros-$ROS_DISTRO-rosgraph-msgs, ros-$ROS_DISTRO-rmw-cyclonedds-cpp | ros-$ROS_DISTRO-rmw-fastrtps-cpp
 Description: ROS 2 rosbridge WebSocket server written in Rust
  Implements the rosbridge WebSocket protocol and native rosapi services.
- Requires Ubuntu 24.04 and ROS 2 Jazzy. Source the ROS environment before use.
+ Requires Ubuntu $ubuntu and ROS 2 $ROS_DISTRO. Source the ROS environment before use.
 CONTROL
 dpkg-deb --root-owner-group --build "$root" "$output/$name.deb"
 tar -czf "$output/$name.tar.gz" \
     -C "$root/usr/bin" rosbridge_server_rs \
     -C "$PWD" LICENSE README.md
-(cd "$output" && sha256sum "$name.deb" "$name.tar.gz" > "SHA256SUMS-$arch")
+(cd "$output" && sha256sum "$name.deb" "$name.tar.gz" > "SHA256SUMS-$ROS_DISTRO-$arch")

@@ -81,9 +81,19 @@ def api(server, ros, tmp_path_factory):
     action = ActionServer(ros, Fibonacci, "/rosapi_test_action", lambda _: Fibonacci.Result())
     ros.declare_parameter("rosapi_test", 42)
     log = tmp_path_factory.mktemp("rosapi") / "python.log"
+    remaps = []
+    if os.environ["ROS_DISTRO"] == "humble":
+        for name, _, _ in CASES:
+            remaps += ["-r", f"/rosapi/{name}:=/reference/rosapi/{name}"]
     with log.open("w") as output:
         baseline = subprocess.Popen(
-            ["/opt/ros/jazzy/lib/rosapi/rosapi_node", "--ros-args", "-r", "__ns:=/reference"],
+            [
+                f"/opt/ros/{os.environ['ROS_DISTRO']}/lib/rosapi/rosapi_node",
+                "--ros-args",
+                "-r",
+                "__ns:=/reference",
+                *remaps,
+            ],
             stdout=output,
             stderr=output,
         )
@@ -147,6 +157,11 @@ def test_rosapi_matches_python(api, name, typ, args):
     if name == "action_type":
         assert call(native, cls, args) == {"type": "test_msgs/action/Fibonacci"}
         return
+    # Humble rosapi calls a field that does not exist in its DeleteParam request
+    # and terminates the reference process. Verify the native response directly.
+    if name == "delete_param" and os.environ["ROS_DISTRO"] == "humble":
+        assert call(native, cls, args) == {}
+        return
     expected = call(python, cls, args)
     actual = call(native, cls, args)
     if name.endswith("_details") and name != "node_details":
@@ -158,7 +173,10 @@ def test_rosapi_matches_python(api, name, typ, args):
         # Each implementation excludes itself. The reference process is a remote
         # node to Rust, so remove only its own configuration from the comparison.
         actual["names"] = [n for n in actual["names"] if not n.startswith("/reference/rosapi:")]
-        assert sorted(actual["names"]) == sorted(expected["names"])
+        if os.environ["ROS_DISTRO"] == "humble":
+            assert set(expected["names"]) <= set(actual["names"])
+        else:
+            assert sorted(actual["names"]) == sorted(expected["names"])
     elif name in (
         "nodes",
         "interfaces",
@@ -172,7 +190,12 @@ def test_rosapi_matches_python(api, name, typ, args):
         "get_param_names",
     ):
         key = next(iter(actual))
-        assert sorted(actual[key]) == sorted(expected[key])
+        if name == "interfaces" and os.environ["ROS_DISTRO"] == "humble":
+            # Humble rosapi omits request, response and several installed
+            # interfaces that native introspection can load.
+            assert set(expected[key]) <= set(actual[key])
+        else:
+            assert sorted(actual[key]) == sorted(expected[key])
     elif name == "node_details":
         assert {k: sorted(v) for k, v in actual.items()} == {
             k: sorted(v) for k, v in expected.items()
@@ -191,10 +214,13 @@ def test_parameter_roundtrip(api, value):
     full_name = ros.get_fully_qualified_name() + ":" + name
     try:
         cls, native, _ = clients["set_param"]
-        assert call(native, cls, {"name": full_name, "value": json.dumps(value)})["successful"]
+        set_response = call(native, cls, {"name": full_name, "value": json.dumps(value)})
+        if os.environ["ROS_DISTRO"] != "humble":
+            assert set_response["successful"]
         cls, native, _ = clients["get_param"]
         response = call(native, cls, {"name": full_name})
-        assert response["successful"]
+        if os.environ["ROS_DISTRO"] != "humble":
+            assert response["successful"]
         assert json.loads(response["value"]) == value
     finally:
         ros.undeclare_parameter(name)
@@ -205,7 +231,8 @@ def test_missing_parameter_default(api):
     cls, native, python = clients["get_param"]
     args = {"name": "/missing_rosapi_test_node:value", "default_value": '"fallback"'}
     actual = call(native, cls, args)
-    assert actual["successful"] is False
+    if os.environ["ROS_DISTRO"] != "humble":
+        assert actual["successful"] is False
     assert json.loads(actual["value"]) == "fallback"
 
 
@@ -253,10 +280,13 @@ def test_real_interface_constants(api):
 def test_invalid_parameter_request_does_not_stop_server(api):
     _, ros, clients = api
     cls, native, _ = clients["set_param"]
-    assert not call(native, cls, {"name": "invalid", "value": "1"})["successful"]
-    assert not call(
+    invalid_name = call(native, cls, {"name": "invalid", "value": "1"})
+    invalid_value = call(
         native, cls, {"name": ros.get_fully_qualified_name() + ":rosapi_test", "value": "{"}
-    )["successful"]
+    )
+    if os.environ["ROS_DISTRO"] != "humble":
+        assert not invalid_name["successful"]
+        assert not invalid_value["successful"]
     cls, native, _ = clients["get_ros_version"]
     assert call(native, cls, {})["version"] == 2
 
@@ -269,7 +299,9 @@ def test_delete_existing_dynamic_parameter(api):
     ros.declare_parameter(name, 42, ParameterDescriptor(dynamic_typing=True))
     full_name = ros.get_fully_qualified_name() + ":" + name
     cls, native, _ = clients["delete_param"]
-    assert call(native, cls, {"name": full_name})["successful"]
+    delete_response = call(native, cls, {"name": full_name})
+    if os.environ["ROS_DISTRO"] != "humble":
+        assert delete_response["successful"]
     cls, native, _ = clients["has_param"]
     assert call(native, cls, {"name": full_name})["exists"] is False
 
@@ -340,7 +372,8 @@ def test_rosapi_filters_and_parameter_timeout(ros, tmp_path):
                 srv.GetParam,
                 {"name": ros.get_fully_qualified_name() + ":blocked", "default_value": "42"},
             )
-            assert not denied_param["successful"]
+            if os.environ["ROS_DISTRO"] != "humble":
+                assert not denied_param["successful"]
             assert json.loads(denied_param["value"]) == 42
 
             from rcl_interfaces.srv import GetParameters
@@ -365,8 +398,9 @@ def test_rosapi_filters_and_parameter_timeout(ros, tmp_path):
                     srv.GetParam,
                     {"name": "/slow_rosapi:rosapi_slow", "default_value": "null"},
                 )
-                assert result["successful"] is False
-                assert result["reason"] == "Timeout occurred"
+                if os.environ["ROS_DISTRO"] != "humble":
+                    assert result["successful"] is False
+                    assert result["reason"] == "Timeout occurred"
             finally:
                 ros.destroy_service(service)
         finally:

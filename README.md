@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/yumeminami/rosbridge_server_rs/actions/workflows/ci.yml/badge.svg)](https://github.com/yumeminami/rosbridge_server_rs/actions/workflows/ci.yml)
 [![License: EPL-2.0 OR Apache-2.0](https://img.shields.io/badge/License-EPL--2.0%20OR%20Apache--2.0-blue)](LICENSE)
-[![ROS 2: Jazzy](https://img.shields.io/badge/ROS%202-Jazzy-blue)](docs/usage.md)
+[![ROS 2: Humble | Jazzy](https://img.shields.io/badge/ROS%202-Humble%20%7C%20Jazzy-blue)](docs/usage.md)
 
 **A fast, lightweight ROS 2 WebSocket server, written in Rust.**
 
@@ -58,21 +58,34 @@ observation, not a controlled throughput, latency or frame-loss benchmark.
 
 ## Install and run
 
-Requires **Ubuntu 24.04 and ROS 2 Jazzy**. Download the `.deb` matching your
-architecture from [v0.1.0](https://github.com/yumeminami/rosbridge_server_rs/releases/tag/v0.1.0):
+Requires **ROS 2 Humble on Ubuntu 22.04** or **ROS 2 Jazzy on Ubuntu 24.04**.
+Download the `.deb` matching the ROS distribution and architecture from
+[v0.1.1](https://github.com/yumeminami/rosbridge_server_rs/releases/tag/v0.1.1):
 `amd64` for Intel/AMD, or `arm64` for ARM64. With the ROS apt repository configured:
 
 ```bash
-sudo apt install ./rosbridge-server-rs_0.1.0_ubuntu24.04_amd64.deb
+sudo apt install ./rosbridge-server-rs_0.1.1_jazzy_ubuntu24.04_amd64.deb
 source /opt/ros/jazzy/setup.bash
 rosbridge_server_rs
+```
+
+`rosbridge-server-rs` is provided as an equivalent command.
+
+With [uv](https://docs.astral.sh/uv/), download both release wheels into one
+directory. uv selects x86_64 or ARM64, and the launcher reads `$ROS_DISTRO` to
+select Humble or Jazzy:
+
+```bash
+source /opt/ros/jazzy/setup.bash
+uvx --no-index --find-links ./dist rosbridge-server-rs
 ```
 
 Use the `arm64` filename on ARM64. Connect your client to `ws://localhost:9090`
 (or the server's IP address). All 29 rosapi services are built in.
 Source your ROS workspace before starting the server if you use custom messages.
 
-Archive installation and checksum verification: [installation guide](docs/install.md).
+Wheel download, persistent uv installation, archives and checksums:
+[installation guide](docs/install.md).
 Options: [usage](docs/usage.md). Developers: [build from source](docs/building.md).
 
 ## Protocol support
@@ -107,12 +120,14 @@ For native tests, place `rosbridge_suite` beside this repository or set
 `ROSBRIDGE_SUITE_PATH` to its location, then run:
 
 ```bash
-docker compose run --build --rm test
+scripts/ci_container.sh jazzy
+# Or: scripts/ci_container.sh humble
 ```
 
-The container builds upstream test interfaces and runs native conversion,
-protocol and WebSocket integration tests. See [benchmarks](benchmarks/README.md)
-for the separate compatibility and performance runners.
+The script pulls an official ROS base image and reuses one container plus Rust
+volumes across runs. It installs dependencies once, then runs conversion,
+protocol, WebSocket and package tests. See [benchmarks](benchmarks/README.md) for
+the separate compatibility and performance runners.
 
 ```text
 src/
@@ -131,9 +146,9 @@ Use `cargo fmt` for Rust and `black --line-length 100` for Python. Keep native R
 handles on the worker thread; WebSocket tasks communicate through bounded queues.
 
 CI checks formatting, Clippy, protocol tests and upstream WebSocket compatibility
-on native Linux x86_64 and ARM64 runners. It also installs and tests each package
-in a clean ROS 2 Jazzy runtime container. Version tags publish tested `.deb` and
-`.tar.gz` packages with SHA-256 checksums to GitHub Releases.
+on native Linux x86_64 and ARM64 runners for Humble and Jazzy. It installs and
+tests each package in its matching ROS container. Version tags publish
+tested `.deb`, `.tar.gz` and wheel packages with SHA-256 checksums.
 
 See [CHANGELOG](CHANGELOG.md) for release history.
 

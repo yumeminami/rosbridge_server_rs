@@ -11,8 +11,8 @@
 #
 
 set -eo pipefail
-bash scripts/test.sh --junitxml=/work/ci-results/websocket.xml
 source "/opt/ros/$ROS_DISTRO/setup.bash"
-source target/rosbridge-test-install/setup.bash
-cargo build --locked --release
-python3 benchmarks/parity.py
+uvx --no-index --find-links /wheel rosbridge-server-rs --version
+uv tool install --no-index --find-links /wheel rosbridge-server-rs
+"$UV_TOOL_BIN_DIR/rosbridge_server_rs" --version
+"$UV_TOOL_BIN_DIR/rosbridge-server-rs" --version

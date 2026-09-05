@@ -2,6 +2,16 @@
 
 Release history for rosbridge_server_rs.
 
+## 0.1.1 — 2026-09-06
+
+### Added
+
+- Platform wheels for uv and uvx, with automatic x86_64 and ARM64 selection.
+- Clean-runtime uvx and persistent uv tool installation checks on both architectures.
+- ROS 2 Humble packages and integration tests alongside Jazzy.
+- Accept Cyclone DDS or Fast DDS as the installed RMW and provide both underscore
+  and hyphen command names.
+
 ## 0.1.0 — 2026-09-05
 
 First early release for Ubuntu 24.04 and ROS 2 Jazzy, on amd64 and arm64.
