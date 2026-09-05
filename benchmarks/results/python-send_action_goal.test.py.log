@@ -1,0 +1,17 @@
+2026-09-05 11:42:35+0000 [-] Log opened.
+2026-09-05 11:42:35+0000 [-] Starting factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff84eea840>
+2026-09-05 11:42:35+0000 [-] WebSocket client sent message: b'{"op": "send_action_goal", "action": "/test_fibonacci_action", "action_type": "example_interfaces/Fibonacci", "args": {"order": 5}, "feedback": true}'
+[INFO] [1788608556.095325625] [test_one_call]: Received message on WebSocket: {'op': 'action_feedback', 'action': '/test_fibonacci_action', 'values': {'sequence': [0, 1, 1]}}
+[INFO] [1788608556.559184875] [test_one_call]: Received message on WebSocket: {'op': 'action_feedback', 'action': '/test_fibonacci_action', 'values': {'sequence': [0, 1, 1, 2]}}
+[INFO] [1788608557.060495750] [test_one_call]: Received message on WebSocket: {'op': 'action_feedback', 'action': '/test_fibonacci_action', 'values': {'sequence': [0, 1, 1, 2, 3]}}
+[INFO] [1788608557.560994834] [test_one_call]: Received message on WebSocket: {'op': 'action_feedback', 'action': '/test_fibonacci_action', 'values': {'sequence': [0, 1, 1, 2, 3, 5]}}
+[INFO] [1788608558.068741584] [test_one_call]: Received message on WebSocket: {'op': 'action_result', 'action': '/test_fibonacci_action', 'values': {'sequence': [0, 1, 1, 2, 3, 5]}, 'status': 4, 'result': True}
+[INFO] [1788608558.069390084] [test_one_call]: Received all messages on WebSocket
+2026-09-05 11:42:38+0000 [-] Stopping factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff84eea840>
+2026-09-05 11:42:38+0000 [-] Main loop terminated.
+2026-09-05 11:42:38+0000 [-] test_one_call (upstream_case.TestSendActionGoal.test_one_call) ... ok
+2026-09-05 11:42:38+0000 [-] 
+2026-09-05 11:42:38+0000 [-] ----------------------------------------------------------------------
+2026-09-05 11:42:38+0000 [-] Ran 1 test in 2.235s
+2026-09-05 11:42:38+0000 [-] 
+2026-09-05 11:42:38+0000 [-] OK

@@ -1,0 +1,16 @@
+2026-09-05 11:40:51+0000 [-] Log opened.
+2026-09-05 11:40:51+0000 [-] Starting factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff921cbb60>
+2026-09-05 11:40:51+0000 [-] WebSocket client sent message: b'{"op": "advertise_action", "action": "/test_fibonacci_action", "type": "example_interfaces/Fibonacci"}'
+[INFO] [1788608451.761154757] [test_two_concurrent_calls]: Received message on WebSocket: {'op': 'send_action_goal', 'id': 'action_goal:/test_fibonacci_action:1', 'action': '/test_fibonacci_action', 'action_type': 'example_interfaces/Fibonacci', 'args': {'order': 3}, 'feedback': True}
+[INFO] [1788608451.761798882] [test_two_concurrent_calls]: Received message on WebSocket: {'op': 'send_action_goal', 'id': 'action_goal:/test_fibonacci_action:2', 'action': '/test_fibonacci_action', 'action_type': 'example_interfaces/Fibonacci', 'args': {'order': 5}, 'feedback': True}
+[INFO] [1788608451.762019882] [test_two_concurrent_calls]: Received all messages on WebSocket
+2026-09-05 11:40:51+0000 [-] WebSocket client sent message: b'{"op": "action_result", "action": "/test_fibonacci_action", "values": {"sequence": [0, 1, 1, 2]}, "status": 4, "id": "action_goal:/test_fibonacci_action:1", "result": true}'
+2026-09-05 11:40:51+0000 [-] WebSocket client sent message: b'{"op": "action_result", "action": "/test_fibonacci_action", "values": {"sequence": [0, 1, 1, 2, 3, 5]}, "status": 4, "id": "action_goal:/test_fibonacci_action:2", "result": true}'
+2026-09-05 11:40:51+0000 [-] Stopping factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff921cbb60>
+2026-09-05 11:40:51+0000 [-] Main loop terminated.
+2026-09-05 11:40:51+0000 [-] test_two_concurrent_calls (upstream_case.TestAdvertiseAction.test_two_concurrent_calls) ... ok
+2026-09-05 11:40:51+0000 [-] 
+2026-09-05 11:40:51+0000 [-] ----------------------------------------------------------------------
+2026-09-05 11:40:51+0000 [-] Ran 1 test in 0.331s
+2026-09-05 11:40:51+0000 [-] 
+2026-09-05 11:40:51+0000 [-] OK

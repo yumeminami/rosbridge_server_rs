@@ -1,0 +1,44 @@
+2026-09-05 11:42:44+0000 [-] Log opened.
+2026-09-05 11:42:44+0000 [-] Starting factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff904517c0>
+2026-09-05 11:42:44+0000 [-] WebSocket client sent message: b'{"op": "subscribe", "topic": "/b_topic", "type": "std_msgs/String", "queue_length": 0}'
+2026-09-05 11:42:44+0000 [-] WebSocket client sent message: b'{"op": "advertise", "topic": "/a_topic", "type": "std_msgs/String"}'
+2026-09-05 11:42:45+0000 [-] WebSocket client sent message: b'{"op": "publish", "topic": "/a_topic", "msg": {"data": "AAAAAAAAAA"}}'
+2026-09-05 11:42:45+0000 [-] WebSocket client sent message: b'{"op": "publish", "topic": "/a_topic", "msg": {"data": "AAAAAAAAAA"}}'
+2026-09-05 11:42:45+0000 [-] WebSocket client sent message: b'{"op": "publish", "topic": "/a_topic", "msg": {"data": "AAAAAAAAAA"}}'
+2026-09-05 11:42:45+0000 [-] WebSocket client sent message: b'{"op": "publish", "topic": "/a_topic", "msg": {"data": "AAAAAAAAAA"}}'
+2026-09-05 11:42:45+0000 [-] WebSocket client sent message: b'{"op": "publish", "topic": "/a_topic", "msg": {"data": "AAAAAAAAAA"}}'
+2026-09-05 11:42:45+0000 [-] WebSocket client sent message: b'{"op": "publish", "topic": "/a_topic", "msg": {"data": "AAAAAAAAAA"}}'
+2026-09-05 11:42:45+0000 [-] WebSocket client sent message: b'{"op": "publish", "topic": "/a_topic", "msg": {"data": "AAAAAAAAAA"}}'
+2026-09-05 11:42:45+0000 [-] WebSocket client sent message: b'{"op": "publish", "topic": "/a_topic", "msg": {"data": "AAAAAAAAAA"}}'
+2026-09-05 11:42:45+0000 [-] WebSocket client sent message: b'{"op": "publish", "topic": "/a_topic", "msg": {"data": "AAAAAAAAAA"}}'
+2026-09-05 11:42:45+0000 [-] WebSocket client sent message: b'{"op": "publish", "topic": "/a_topic", "msg": {"data": "AAAAAAAAAA"}}'
+[INFO] [1788608565.249766004] [test_smoke]: Received message on WebSocket: {'op': 'publish', 'topic': '/b_topic', 'msg': {'data': 'BBBBBBBBBB'}}
+[INFO] [1788608565.250066171] [test_smoke]: Received message on ROS subscriber: std_msgs.msg.String(data='AAAAAAAAAA')
+[INFO] [1788608565.250805296] [test_smoke]: Received message on WebSocket: {'op': 'publish', 'topic': '/b_topic', 'msg': {'data': 'BBBBBBBBBB'}}
+[INFO] [1788608565.251489171] [test_smoke]: Received message on WebSocket: {'op': 'publish', 'topic': '/b_topic', 'msg': {'data': 'BBBBBBBBBB'}}
+[INFO] [1788608565.251745254] [test_smoke]: Received message on ROS subscriber: std_msgs.msg.String(data='AAAAAAAAAA')
+[INFO] [1788608565.252411463] [test_smoke]: Received message on WebSocket: {'op': 'publish', 'topic': '/b_topic', 'msg': {'data': 'BBBBBBBBBB'}}
+[INFO] [1788608565.252646379] [test_smoke]: Received message on ROS subscriber: std_msgs.msg.String(data='AAAAAAAAAA')
+[INFO] [1788608565.253235088] [test_smoke]: Received message on WebSocket: {'op': 'publish', 'topic': '/b_topic', 'msg': {'data': 'BBBBBBBBBB'}}
+[INFO] [1788608565.253704379] [test_smoke]: Received message on ROS subscriber: std_msgs.msg.String(data='AAAAAAAAAA')
+[INFO] [1788608565.254074754] [test_smoke]: Received message on WebSocket: {'op': 'publish', 'topic': '/b_topic', 'msg': {'data': 'BBBBBBBBBB'}}
+[INFO] [1788608565.254615004] [test_smoke]: Received message on WebSocket: {'op': 'publish', 'topic': '/b_topic', 'msg': {'data': 'BBBBBBBBBB'}}
+[INFO] [1788608565.254853963] [test_smoke]: Received message on ROS subscriber: std_msgs.msg.String(data='AAAAAAAAAA')
+[INFO] [1788608565.255791046] [test_smoke]: Received message on ROS subscriber: std_msgs.msg.String(data='AAAAAAAAAA')
+[INFO] [1788608565.256209296] [test_smoke]: Received message on WebSocket: {'op': 'publish', 'topic': '/b_topic', 'msg': {'data': 'BBBBBBBBBB'}}
+[INFO] [1788608565.256677796] [test_smoke]: Received message on WebSocket: {'op': 'publish', 'topic': '/b_topic', 'msg': {'data': 'BBBBBBBBBB'}}
+[INFO] [1788608565.256861338] [test_smoke]: Received message on ROS subscriber: std_msgs.msg.String(data='AAAAAAAAAA')
+[INFO] [1788608565.257504629] [test_smoke]: Received message on ROS subscriber: std_msgs.msg.String(data='AAAAAAAAAA')
+[INFO] [1788608565.258114921] [test_smoke]: Received message on WebSocket: {'op': 'publish', 'topic': '/b_topic', 'msg': {'data': 'BBBBBBBBBB'}}
+[INFO] [1788608565.258636379] [test_smoke]: Received message on ROS subscriber: std_msgs.msg.String(data='AAAAAAAAAA')
+[INFO] [1788608565.259262504] [test_smoke]: Received all messages on WebSocket
+[INFO] [1788608565.259434713] [test_smoke]: Received message on ROS subscriber: std_msgs.msg.String(data='AAAAAAAAAA')
+[INFO] [1788608565.259620046] [test_smoke]: Received all messages on ROS subscriber
+2026-09-05 11:42:45+0000 [-] Stopping factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff904517c0>
+2026-09-05 11:42:45+0000 [-] Main loop terminated.
+2026-09-05 11:42:45+0000 [-] test_smoke (upstream_case.TestWebsocketSmoke.test_smoke) ... ok
+2026-09-05 11:42:45+0000 [-] 
+2026-09-05 11:42:45+0000 [-] ----------------------------------------------------------------------
+2026-09-05 11:42:45+0000 [-] Ran 1 test in 1.130s
+2026-09-05 11:42:45+0000 [-] 
+2026-09-05 11:42:45+0000 [-] OK

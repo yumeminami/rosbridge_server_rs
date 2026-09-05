@@ -1,0 +1,34 @@
+{
+  "platform": "Linux-5.15.49-linuxkit-pr-aarch64-with-glibc2.39",
+  "cpu_count": 4,
+  "cpu_affinity": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "rust_binary_sha256": "d72d0d849dec4514d81a9fdf13d0685de3150d5eca55e94a2b946ce5d1408eb6",
+  "python_package": "ros-jazzy-rosbridge-server\t2.7.0-1noble.20260612.162521",
+  "machine": "aarch64",
+  "python": "3.12.3",
+  "rust": "rustc 1.93.1 (01f6ddf75 2026-02-11)",
+  "upstream_commit": "aa9a7a33ddb3b1b45ddd6d2eead4c3d5eb800b14",
+  "repeats": 3,
+  "seconds": 2.0,
+  "payloads": [
+    64,
+    1024,
+    65536
+  ],
+  "windows": [
+    1,
+    32
+  ],
+  "encoding": "JSON, WebSocket compression disabled",
+  "qos": "reliable volatile keep_last depth256",
+  "clock": "time.perf_counter",
+  "path": "WebSocket publish -> RCL/RMW topic -> WebSocket subscription",
+  "python_server": "ros-jazzy-rosbridge-server 2.7.0 (installed package)",
+  "ros_distro": "jazzy",
+  "rmw": "default (rmw_fastrtps_cpp in this image)"
+}

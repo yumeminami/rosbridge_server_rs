@@ -1,0 +1,18 @@
+2026-09-05 11:42:32+0000 [-] Log opened.
+2026-09-05 11:42:32+0000 [-] Starting factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff78e64fb0>
+2026-09-05 11:42:32+0000 [-] WebSocket client sent message: b'{"op": "subscribe", "topic": "/a_topic", "type": "std_msgs/String", "compression": "cbor-raw"}'
+2026-09-05 11:42:32+0000 [-] Starting factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff83f84590>
+2026-09-05 11:42:32+0000 [-] WebSocket client sent message: b'{"op": "subscribe", "topic": "/a_topic", "type": "std_msgs/String", "compression": "cbor-raw"}'
+[INFO] [1788608553.973240305] [test_multiple_subscribers]: Received message on WebSocket 1: b'\xa3bopgpublishetopich/a_topiccmsg\xa3ebytesN\x00\x01\x00\x00\x06\x00\x00\x00hello\x00dsecs\x1aj\x9c\x00)ensecs\x1a7>\x05P'
+[INFO] [1788608553.973528930] [test_multiple_subscribers]: Received all messages on WebSocket 1
+[INFO] [1788608553.974019847] [test_multiple_subscribers]: Received message on WebSocket 2: b'\xa3bopgpublishetopich/a_topiccmsg\xa3ebytesN\x00\x01\x00\x00\x06\x00\x00\x00hello\x00dsecs\x1aj\x9c\x00)ensecs\x1a7>\x05P'
+[INFO] [1788608553.974205805] [test_multiple_subscribers]: Received all messages on WebSocket 2
+2026-09-05 11:42:34+0000 [-] Stopping factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff83f84590>
+2026-09-05 11:42:34+0000 [-] Stopping factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff78e64fb0>
+2026-09-05 11:42:34+0000 [-] Main loop terminated.
+2026-09-05 11:42:34+0000 [-] test_multiple_subscribers (upstream_case.TestMultipleSubscribers.test_multiple_subscribers) ... ok
+2026-09-05 11:42:34+0000 [-] 
+2026-09-05 11:42:34+0000 [-] ----------------------------------------------------------------------
+2026-09-05 11:42:34+0000 [-] Ran 1 test in 2.049s
+2026-09-05 11:42:34+0000 [-] 
+2026-09-05 11:42:34+0000 [-] OK

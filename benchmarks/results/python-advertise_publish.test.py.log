@@ -1,0 +1,39 @@
+2026-09-05 11:40:56+0000 [-] Log opened.
+2026-09-05 11:40:56+0000 [-] Starting factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff905160c0>
+2026-09-05 11:40:56+0000 [-] WebSocket client sent message: b'{"op": "advertise", "topic": "/test_adv_1", "type": "std_msgs/String"}'
+2026-09-05 11:40:57+0000 [-] Starting factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff904f19a0>
+2026-09-05 11:40:57+0000 [-] WebSocket client sent message: b'{"op": "advertise", "topic": "/test_adv_2", "type": "std_msgs/String"}'
+2026-09-05 11:40:58+0000 [-] WebSocket client sent message: b'{"op": "unadvertise", "topic": "/test_adv_2"}'
+2026-09-05 11:41:00+0000 [-] Starting factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff90517050>
+2026-09-05 11:41:00+0000 [-] WebSocket client sent message: b'{"op": "advertise", "topic": "/test_adv_3", "type": "std_msgs/String", "id": "id_a"}'
+2026-09-05 11:41:00+0000 [-] WebSocket client sent message: b'{"op": "advertise", "topic": "/test_adv_3", "type": "std_msgs/String", "id": "id_b"}'
+2026-09-05 11:41:01+0000 [-] WebSocket client sent message: b'{"op": "unadvertise", "topic": "/test_adv_3", "id": "id_a"}'
+2026-09-05 11:41:02+0000 [-] WebSocket client sent message: b'{"op": "unadvertise", "topic": "/test_adv_3", "id": "id_b"}'
+2026-09-05 11:41:04+0000 [-] Starting factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff90517e30>
+2026-09-05 11:41:04+0000 [-] WebSocket client sent message: b'{"op": "advertise", "topic": "/test_adv_3b", "type": "std_msgs/String", "id": "id_c"}'
+2026-09-05 11:41:04+0000 [-] WebSocket client sent message: b'{"op": "advertise", "topic": "/test_adv_3b", "type": "std_msgs/String", "id": "id_d"}'
+2026-09-05 11:41:05+0000 [-] WebSocket client sent message: b'{"op": "unadvertise", "topic": "/test_adv_3b"}'
+2026-09-05 11:41:06+0000 [-] Starting factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff90517b60>
+2026-09-05 11:41:06+0000 [-] WebSocket client sent message: b'{"op": "publish", "topic": "/test_pub_4", "type": "std_msgs/String", "msg": {"data": "hello"}}'
+2026-09-05 11:41:07+0000 [-] Starting factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff9053c0e0>
+2026-09-05 11:41:07+0000 [-] WebSocket client sent message: b'{"op": "advertise", "topic": "/test_disc_adv", "type": "std_msgs/String"}'
+2026-09-05 11:41:09+0000 [-] Stopping factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff9053c0e0>
+2026-09-05 11:41:11+0000 [-] Starting factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff9053c170>
+2026-09-05 11:41:11+0000 [-] WebSocket client sent message: b'{"op": "publish", "topic": "/test_disc_pub", "type": "std_msgs/String", "msg": {"data": "hi"}}'
+2026-09-05 11:41:12+0000 [-] Stopping factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff9053c170>
+2026-09-05 11:41:15+0000 [-] Starting factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff9053ccb0>
+2026-09-05 11:41:15+0000 [-] WebSocket client sent message: b'{"op": "publish", "id": "pub_reg_id", "topic": "/test_pub_id", "type": "std_msgs/String", "msg": {"data": "hello"}}'
+2026-09-05 11:41:16+0000 [-] WebSocket client sent message: b'{"op": "unadvertise", "id": "pub_reg_id", "topic": "/test_pub_id"}'
+2026-09-05 11:41:17+0000 [-] Stopping factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff90517050>
+2026-09-05 11:41:17+0000 [-] Stopping factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff90517e30>
+2026-09-05 11:41:17+0000 [-] Stopping factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff904f19a0>
+2026-09-05 11:41:17+0000 [-] Stopping factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff90517b60>
+2026-09-05 11:41:17+0000 [-] Stopping factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff905160c0>
+2026-09-05 11:41:17+0000 [-] Stopping factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff9053ccb0>
+2026-09-05 11:41:17+0000 [-] Main loop terminated.
+2026-09-05 11:41:17+0000 [-] test_advertise_publish_publishers (upstream_case.TestAdvertisePublishPublishers.test_advertise_publish_publishers) ... ok
+2026-09-05 11:41:17+0000 [-] 
+2026-09-05 11:41:17+0000 [-] ----------------------------------------------------------------------
+2026-09-05 11:41:17+0000 [-] Ran 1 test in 20.722s
+2026-09-05 11:41:17+0000 [-] 
+2026-09-05 11:41:17+0000 [-] OK

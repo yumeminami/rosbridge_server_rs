@@ -1,0 +1,51 @@
+[INFO] [1788608456.343688301] [rosbridge_websocket]: Rosbridge WebSocket server started on port 53295
+[INFO] [1788608456.905768760] [rosbridge_websocket]: Calling services in new thread
+[INFO] [1788608456.906507802] [rosbridge_websocket]: Sending action goals in new thread
+[INFO] [1788608456.907514718] [rosbridge_websocket]: Client connected. 1 clients total.
+[INFO] [1788608457.914474260] [rosbridge_websocket]: Calling services in new thread
+[INFO] [1788608457.916102552] [rosbridge_websocket]: Sending action goals in new thread
+[INFO] [1788608457.918215594] [rosbridge_websocket]: Client connected. 2 clients total.
+[INFO] [1788608460.431290887] [rosbridge_websocket]: Calling services in new thread
+[INFO] [1788608460.432837720] [rosbridge_websocket]: Sending action goals in new thread
+[INFO] [1788608460.435133012] [rosbridge_websocket]: Client connected. 3 clients total.
+[INFO] [1788608464.455967513] [rosbridge_websocket]: Calling services in new thread
+[INFO] [1788608464.458206638] [rosbridge_websocket]: Sending action goals in new thread
+[INFO] [1788608464.460724347] [rosbridge_websocket]: Client connected. 4 clients total.
+[INFO] [1788608466.967310334] [rosbridge_websocket]: Calling services in new thread
+[INFO] [1788608466.968705667] [rosbridge_websocket]: Sending action goals in new thread
+[INFO] [1788608466.970826000] [rosbridge_websocket]: Client connected. 5 clients total.
+[INFO] [1788608466.973905417] [rosbridge_websocket]: [Client eaeb7aaa-d3e5-4960-bd9a-6b6fa992720e] Trying to publish to unregistered topic: /test_pub_4, creating registration...
+[INFO] [1788608467.990418793] [rosbridge_websocket]: Calling services in new thread
+[INFO] [1788608467.992720793] [rosbridge_websocket]: Sending action goals in new thread
+[INFO] [1788608468.001649293] [rosbridge_websocket]: Client connected. 6 clients total.
+[INFO] [1788608469.003183668] [rosbridge_websocket]: Client disconnected. 5 clients total.
+[INFO] [1788608471.507979794] [rosbridge_websocket]: Calling services in new thread
+[INFO] [1788608471.510076753] [rosbridge_websocket]: Sending action goals in new thread
+[INFO] [1788608471.512620961] [rosbridge_websocket]: Client connected. 6 clients total.
+[INFO] [1788608471.514422753] [rosbridge_websocket]: [Client d0f83d09-9afb-48df-bd52-8b2b6b797854] Trying to publish to unregistered topic: /test_disc_pub, creating registration...
+[INFO] [1788608472.524798461] [rosbridge_websocket]: Client disconnected. 5 clients total.
+[INFO] [1788608475.031315254] [rosbridge_websocket]: Calling services in new thread
+[INFO] [1788608475.033524254] [rosbridge_websocket]: Sending action goals in new thread
+[INFO] [1788608475.036306963] [rosbridge_websocket]: Client connected. 6 clients total.
+[INFO] [1788608475.038107046] [rosbridge_websocket]: [Client 42411438-e726-490a-8ef7-c979bc0bf358] Trying to publish to unregistered topic: /test_pub_id, creating registration...
+[INFO] [1788608477.547991839] [rosbridge_websocket]: Client disconnected. 5 clients total.
+[INFO] [1788608477.559965964] [rosbridge_websocket]: Client disconnected. 4 clients total.
+[INFO] [1788608477.562717797] [rosbridge_websocket]: Client disconnected. 3 clients total.
+[INFO] [1788608477.568019547] [rosbridge_websocket]: Client disconnected. 2 clients total.
+[INFO] [1788608477.571055505] [rosbridge_websocket]: Client disconnected. 1 clients total.
+[INFO] [1788608477.573530339] [rosbridge_websocket]: Client disconnected. 0 clients total.
+registered capabilities (classes):
+ - <class 'rosbridge_library.capabilities.advertise.Advertise'>
+ - <class 'rosbridge_library.capabilities.publish.Publish'>
+ - <class 'rosbridge_library.capabilities.subscribe.Subscribe'>
+ - <class 'rosbridge_library.capabilities.defragmentation.Defragment'>
+ - <class 'rosbridge_library.capabilities.advertise_service.AdvertiseService'>
+ - <class 'rosbridge_library.capabilities.call_service.CallService'>
+ - <class 'rosbridge_library.capabilities.service_response.ServiceResponse'>
+ - <class 'rosbridge_library.capabilities.unadvertise_service.UnadvertiseService'>
+ - <class 'rosbridge_library.capabilities.advertise_action.AdvertiseAction'>
+ - <class 'rosbridge_library.capabilities.action_feedback.ActionFeedback'>
+ - <class 'rosbridge_library.capabilities.action_result.ActionResult'>
+ - <class 'rosbridge_library.capabilities.send_action_goal.SendActionGoal'>
+ - <class 'rosbridge_library.capabilities.unadvertise_action.UnadvertiseAction'>
+Exiting due to SIGINT

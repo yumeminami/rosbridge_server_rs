@@ -1,0 +1,46 @@
+[INFO] [1788608517.224505802] [rosbridge_websocket]: Rosbridge WebSocket server started on port 33087
+[INFO] [1788608517.590759927] [rosbridge_websocket]: Calling services in new thread
+[INFO] [1788608517.591438260] [rosbridge_websocket]: Sending action goals in new thread
+[INFO] [1788608517.592201052] [rosbridge_websocket]: Client connected. 1 clients total.
+[INFO] [1788608517.594294010] [rosbridge_websocket]: [Client cc21b961-18e1-462a-8b11-7c91af1f447c] Subscribed to /starvation_load_0
+[INFO] [1788608517.595682802] [rosbridge_websocket]: [Client cc21b961-18e1-462a-8b11-7c91af1f447c] Subscribed to /starvation_load_1
+[INFO] [1788608517.603012510] [rosbridge_websocket]: [Client cc21b961-18e1-462a-8b11-7c91af1f447c] Subscribed to /starvation_load_2
+[INFO] [1788608517.604805677] [rosbridge_websocket]: [Client cc21b961-18e1-462a-8b11-7c91af1f447c] Subscribed to /starvation_load_3
+[INFO] [1788608517.606255885] [rosbridge_websocket]: [Client cc21b961-18e1-462a-8b11-7c91af1f447c] Subscribed to /starvation_load_4
+[INFO] [1788608517.615706802] [rosbridge_websocket]: [Client cc21b961-18e1-462a-8b11-7c91af1f447c] Subscribed to /starvation_load_5
+[INFO] [1788608517.641396760] [rosbridge_websocket]: [Client cc21b961-18e1-462a-8b11-7c91af1f447c] Subscribed to /starvation_load_6
+[INFO] [1788608517.672355344] [rosbridge_websocket]: [Client cc21b961-18e1-462a-8b11-7c91af1f447c] Subscribed to /starvation_load_7
+[INFO] [1788608517.676250927] [rosbridge_websocket]: [Client cc21b961-18e1-462a-8b11-7c91af1f447c] Subscribed to /starvation_load_8
+[INFO] [1788608517.682169844] [rosbridge_websocket]: [Client cc21b961-18e1-462a-8b11-7c91af1f447c] Subscribed to /starvation_load_9
+[INFO] [1788608517.690702135] [rosbridge_websocket]: [Client cc21b961-18e1-462a-8b11-7c91af1f447c] Subscribed to /starvation_load_10
+[INFO] [1788608517.702540969] [rosbridge_websocket]: [Client cc21b961-18e1-462a-8b11-7c91af1f447c] Subscribed to /starvation_load_11
+[INFO] [1788608517.729751635] [rosbridge_websocket]: [Client cc21b961-18e1-462a-8b11-7c91af1f447c] Subscribed to /starvation_load_12
+[INFO] [1788608517.745821594] [rosbridge_websocket]: [Client cc21b961-18e1-462a-8b11-7c91af1f447c] Subscribed to /starvation_load_13
+[INFO] [1788608517.762245802] [rosbridge_websocket]: [Client cc21b961-18e1-462a-8b11-7c91af1f447c] Subscribed to /starvation_load_14
+[INFO] [1788608517.764018260] [rosbridge_websocket]: [Client cc21b961-18e1-462a-8b11-7c91af1f447c] Subscribed to /starvation_load_15
+[INFO] [1788608517.793470427] [rosbridge_websocket]: [Client cc21b961-18e1-462a-8b11-7c91af1f447c] Subscribed to /starvation_load_16
+[INFO] [1788608517.833378010] [rosbridge_websocket]: [Client cc21b961-18e1-462a-8b11-7c91af1f447c] Subscribed to /starvation_load_17
+[INFO] [1788608517.847478010] [rosbridge_websocket]: [Client cc21b961-18e1-462a-8b11-7c91af1f447c] Subscribed to /starvation_load_18
+[INFO] [1788608517.851466177] [rosbridge_websocket]: [Client cc21b961-18e1-462a-8b11-7c91af1f447c] Subscribed to /starvation_load_19
+[INFO] [1788608520.628288845] [rosbridge_websocket]: Calling services in new thread
+[INFO] [1788608520.646879428] [rosbridge_websocket]: Sending action goals in new thread
+[INFO] [1788608520.683639762] [rosbridge_websocket]: Client connected. 2 clients total.
+[INFO] [1788608525.625384208] [rosbridge_websocket]: [Client a952dd31-66b3-45fa-a525-e05da9020884] Subscribed to /starvation_probe
+[INFO] [1788608530.628519669] [rosbridge_websocket]: Client disconnected. 1 clients total.
+[INFO] [1788608530.647010085] [rosbridge_websocket]: Client disconnected. 0 clients total.
+[WARN] [1788608530.647698210] [rosbridge_websocket]: WebSocketClosedError: Tried to write to a closed websocket
+registered capabilities (classes):
+ - <class 'rosbridge_library.capabilities.advertise.Advertise'>
+ - <class 'rosbridge_library.capabilities.publish.Publish'>
+ - <class 'rosbridge_library.capabilities.subscribe.Subscribe'>
+ - <class 'rosbridge_library.capabilities.defragmentation.Defragment'>
+ - <class 'rosbridge_library.capabilities.advertise_service.AdvertiseService'>
+ - <class 'rosbridge_library.capabilities.call_service.CallService'>
+ - <class 'rosbridge_library.capabilities.service_response.ServiceResponse'>
+ - <class 'rosbridge_library.capabilities.unadvertise_service.UnadvertiseService'>
+ - <class 'rosbridge_library.capabilities.advertise_action.AdvertiseAction'>
+ - <class 'rosbridge_library.capabilities.action_feedback.ActionFeedback'>
+ - <class 'rosbridge_library.capabilities.action_result.ActionResult'>
+ - <class 'rosbridge_library.capabilities.send_action_goal.SendActionGoal'>
+ - <class 'rosbridge_library.capabilities.unadvertise_action.UnadvertiseAction'>
+Exiting due to SIGINT

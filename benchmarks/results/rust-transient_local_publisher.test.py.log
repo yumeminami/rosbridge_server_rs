@@ -1,0 +1,23 @@
+2026-09-05 11:42:49+0000 [-] Log opened.
+2026-09-05 11:42:51+0000 [-] Starting factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff884e3770>
+2026-09-05 11:42:51+0000 [-] WebSocket client sent message: b'{"op": "subscribe", "topic": "/a_topic", "type": "std_msgs/String"}'
+[INFO] [1788608571.164327882] [test_transient_local_publisher]: Received message on WebSocket 0: {'op': 'publish', 'topic': '/a_topic', 'msg': {'data': 'hello'}}
+[INFO] [1788608571.164725465] [test_transient_local_publisher]: Received all messages on WebSocket 0
+2026-09-05 11:42:51+0000 [-] Starting factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff884e39b0>
+2026-09-05 11:42:51+0000 [-] WebSocket client sent message: b'{"op": "subscribe", "topic": "/a_topic", "type": "std_msgs/String"}'
+[INFO] [1788608571.167263007] [test_transient_local_publisher]: Received message on WebSocket 1: {'op': 'publish', 'topic': '/a_topic', 'msg': {'data': 'hello'}}
+[INFO] [1788608571.167444757] [test_transient_local_publisher]: Received all messages on WebSocket 1
+2026-09-05 11:42:51+0000 [-] Starting factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff88500a10>
+2026-09-05 11:42:51+0000 [-] WebSocket client sent message: b'{"op": "subscribe", "topic": "/a_topic", "type": "std_msgs/String"}'
+[INFO] [1788608571.169731590] [test_transient_local_publisher]: Received message on WebSocket 2: {'op': 'publish', 'topic': '/a_topic', 'msg': {'data': 'hello'}}
+[INFO] [1788608571.169948632] [test_transient_local_publisher]: Received all messages on WebSocket 2
+2026-09-05 11:42:51+0000 [-] Stopping factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff884e3770>
+2026-09-05 11:42:51+0000 [-] Stopping factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff884e39b0>
+2026-09-05 11:42:51+0000 [-] Stopping factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff88500a10>
+2026-09-05 11:42:51+0000 [-] Main loop terminated.
+2026-09-05 11:42:51+0000 [-] test_transient_local_publisher (upstream_case.TestTransientLocalPublisher.test_transient_local_publisher) ... ok
+2026-09-05 11:42:51+0000 [-] 
+2026-09-05 11:42:51+0000 [-] ----------------------------------------------------------------------
+2026-09-05 11:42:51+0000 [-] Ran 1 test in 2.112s
+2026-09-05 11:42:51+0000 [-] 
+2026-09-05 11:42:51+0000 [-] OK

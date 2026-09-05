@@ -1,0 +1,21 @@
+[INFO] [1788607725.978045421] [rosbridge_websocket]: Rosbridge WebSocket server started on port 55411
+[INFO] [1788607725.993036296] [rosbridge_websocket]: Calling services in new thread
+[INFO] [1788607725.993462005] [rosbridge_websocket]: Sending action goals in new thread
+[INFO] [1788607725.994121088] [rosbridge_websocket]: Client connected. 1 clients total.
+[INFO] [1788607725.995965796] [rosbridge_websocket]: [Client af592ba7-a5de-434e-b1be-eb198bf3a01a] Subscribed to /benchmark_echo
+[INFO] [1788607728.514318464] [rosbridge_websocket]: Client disconnected. 0 clients total.
+registered capabilities (classes):
+ - <class 'rosbridge_library.capabilities.advertise.Advertise'>
+ - <class 'rosbridge_library.capabilities.publish.Publish'>
+ - <class 'rosbridge_library.capabilities.subscribe.Subscribe'>
+ - <class 'rosbridge_library.capabilities.defragmentation.Defragment'>
+ - <class 'rosbridge_library.capabilities.advertise_service.AdvertiseService'>
+ - <class 'rosbridge_library.capabilities.call_service.CallService'>
+ - <class 'rosbridge_library.capabilities.service_response.ServiceResponse'>
+ - <class 'rosbridge_library.capabilities.unadvertise_service.UnadvertiseService'>
+ - <class 'rosbridge_library.capabilities.advertise_action.AdvertiseAction'>
+ - <class 'rosbridge_library.capabilities.action_feedback.ActionFeedback'>
+ - <class 'rosbridge_library.capabilities.action_result.ActionResult'>
+ - <class 'rosbridge_library.capabilities.send_action_goal.SendActionGoal'>
+ - <class 'rosbridge_library.capabilities.unadvertise_action.UnadvertiseAction'>
+Exiting due to SIGINT

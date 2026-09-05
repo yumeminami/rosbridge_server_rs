@@ -1,0 +1,33 @@
+2026-09-05 11:42:11+0000 [-] Log opened.
+2026-09-05 11:42:11+0000 [-] Starting factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff7c45e8a0>
+2026-09-05 11:42:11+0000 [-] WebSocket client sent message: b'{"op": "subscribe", "topic": "/starvation_load_0", "type": "std_msgs/msg/Float64MultiArray"}'
+2026-09-05 11:42:11+0000 [-] WebSocket client sent message: b'{"op": "subscribe", "topic": "/starvation_load_1", "type": "std_msgs/msg/Float64MultiArray"}'
+2026-09-05 11:42:11+0000 [-] WebSocket client sent message: b'{"op": "subscribe", "topic": "/starvation_load_2", "type": "std_msgs/msg/Float64MultiArray"}'
+2026-09-05 11:42:11+0000 [-] WebSocket client sent message: b'{"op": "subscribe", "topic": "/starvation_load_3", "type": "std_msgs/msg/Float64MultiArray"}'
+2026-09-05 11:42:11+0000 [-] WebSocket client sent message: b'{"op": "subscribe", "topic": "/starvation_load_4", "type": "std_msgs/msg/Float64MultiArray"}'
+2026-09-05 11:42:11+0000 [-] WebSocket client sent message: b'{"op": "subscribe", "topic": "/starvation_load_5", "type": "std_msgs/msg/Float64MultiArray"}'
+2026-09-05 11:42:11+0000 [-] WebSocket client sent message: b'{"op": "subscribe", "topic": "/starvation_load_6", "type": "std_msgs/msg/Float64MultiArray"}'
+2026-09-05 11:42:11+0000 [-] WebSocket client sent message: b'{"op": "subscribe", "topic": "/starvation_load_7", "type": "std_msgs/msg/Float64MultiArray"}'
+2026-09-05 11:42:11+0000 [-] WebSocket client sent message: b'{"op": "subscribe", "topic": "/starvation_load_8", "type": "std_msgs/msg/Float64MultiArray"}'
+2026-09-05 11:42:11+0000 [-] WebSocket client sent message: b'{"op": "subscribe", "topic": "/starvation_load_9", "type": "std_msgs/msg/Float64MultiArray"}'
+2026-09-05 11:42:11+0000 [-] WebSocket client sent message: b'{"op": "subscribe", "topic": "/starvation_load_10", "type": "std_msgs/msg/Float64MultiArray"}'
+2026-09-05 11:42:11+0000 [-] WebSocket client sent message: b'{"op": "subscribe", "topic": "/starvation_load_11", "type": "std_msgs/msg/Float64MultiArray"}'
+2026-09-05 11:42:11+0000 [-] WebSocket client sent message: b'{"op": "subscribe", "topic": "/starvation_load_12", "type": "std_msgs/msg/Float64MultiArray"}'
+2026-09-05 11:42:11+0000 [-] WebSocket client sent message: b'{"op": "subscribe", "topic": "/starvation_load_13", "type": "std_msgs/msg/Float64MultiArray"}'
+2026-09-05 11:42:11+0000 [-] WebSocket client sent message: b'{"op": "subscribe", "topic": "/starvation_load_14", "type": "std_msgs/msg/Float64MultiArray"}'
+2026-09-05 11:42:11+0000 [-] WebSocket client sent message: b'{"op": "subscribe", "topic": "/starvation_load_15", "type": "std_msgs/msg/Float64MultiArray"}'
+2026-09-05 11:42:11+0000 [-] WebSocket client sent message: b'{"op": "subscribe", "topic": "/starvation_load_16", "type": "std_msgs/msg/Float64MultiArray"}'
+2026-09-05 11:42:11+0000 [-] WebSocket client sent message: b'{"op": "subscribe", "topic": "/starvation_load_17", "type": "std_msgs/msg/Float64MultiArray"}'
+2026-09-05 11:42:11+0000 [-] WebSocket client sent message: b'{"op": "subscribe", "topic": "/starvation_load_18", "type": "std_msgs/msg/Float64MultiArray"}'
+2026-09-05 11:42:11+0000 [-] WebSocket client sent message: b'{"op": "subscribe", "topic": "/starvation_load_19", "type": "std_msgs/msg/Float64MultiArray"}'
+2026-09-05 11:42:14+0000 [-] Starting factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff8fa76330>
+2026-09-05 11:42:19+0000 [-] WebSocket client sent message: b'{"op": "subscribe", "topic": "/starvation_probe", "type": "std_msgs/msg/String"}'
+2026-09-05 11:42:24+0000 [-] Stopping factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff8fa76330>
+2026-09-05 11:42:24+0000 [-] Stopping factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff7c45e8a0>
+2026-09-05 11:42:24+0000 [-] Main loop terminated.
+2026-09-05 11:42:24+0000 [-] test_probe_receives_heartbeats_under_load (upstream_case.TestEventLoopStarvation.test_probe_receives_heartbeats_under_load) ... ok
+2026-09-05 11:42:24+0000 [-] 
+2026-09-05 11:42:24+0000 [-] ----------------------------------------------------------------------
+2026-09-05 11:42:24+0000 [-] Ran 1 test in 13.055s
+2026-09-05 11:42:24+0000 [-] 
+2026-09-05 11:42:24+0000 [-] OK

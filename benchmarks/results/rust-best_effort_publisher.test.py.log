@@ -1,0 +1,13 @@
+2026-09-05 11:41:50+0000 [-] Log opened.
+2026-09-05 11:41:51+0000 [-] Starting factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff8c487050>
+2026-09-05 11:41:51+0000 [-] WebSocket client sent message: b'{"op": "subscribe", "topic": "/a_topic", "type": "std_msgs/String"}'
+[INFO] [1788608513.039773925] [test_best_effort_publisher]: Received message on WebSocket 1: {'op': 'publish', 'topic': '/a_topic', 'msg': {'data': 'hello'}}
+[INFO] [1788608513.040205258] [test_best_effort_publisher]: Received all messages on WebSocket 1
+2026-09-05 11:41:53+0000 [-] Stopping factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff8c487050>
+2026-09-05 11:41:53+0000 [-] Main loop terminated.
+2026-09-05 11:41:53+0000 [-] test_best_effort_publisher (upstream_case.TestBestEffortPublisher.test_best_effort_publisher) ... ok
+2026-09-05 11:41:53+0000 [-] 
+2026-09-05 11:41:53+0000 [-] ----------------------------------------------------------------------
+2026-09-05 11:41:53+0000 [-] Ran 1 test in 2.102s
+2026-09-05 11:41:53+0000 [-] 
+2026-09-05 11:41:53+0000 [-] OK

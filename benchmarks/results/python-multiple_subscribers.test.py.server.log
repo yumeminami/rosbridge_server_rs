@@ -1,0 +1,26 @@
+[INFO] [1788608545.731318759] [rosbridge_websocket]: Rosbridge WebSocket server started on port 47665
+[INFO] [1788608546.122935009] [rosbridge_websocket]: Calling services in new thread
+[INFO] [1788608546.123442426] [rosbridge_websocket]: Sending action goals in new thread
+[INFO] [1788608546.124204634] [rosbridge_websocket]: Client connected. 1 clients total.
+[INFO] [1788608546.126843926] [rosbridge_websocket]: Calling services in new thread
+[INFO] [1788608546.127660551] [rosbridge_websocket]: [Client 7ac662fb-3cf9-4c0f-8dfb-0d9369e1bfd0] Subscribed to /a_topic
+[INFO] [1788608546.128056593] [rosbridge_websocket]: Sending action goals in new thread
+[INFO] [1788608546.128724551] [rosbridge_websocket]: Client connected. 2 clients total.
+[INFO] [1788608546.130143301] [rosbridge_websocket]: [Client e2fbfce2-44b0-4265-b599-941ee6b1719d] Subscribed to /a_topic
+[INFO] [1788608547.197374885] [rosbridge_websocket]: Client disconnected. 1 clients total.
+[INFO] [1788608547.199364177] [rosbridge_websocket]: Client disconnected. 0 clients total.
+registered capabilities (classes):
+ - <class 'rosbridge_library.capabilities.advertise.Advertise'>
+ - <class 'rosbridge_library.capabilities.publish.Publish'>
+ - <class 'rosbridge_library.capabilities.subscribe.Subscribe'>
+ - <class 'rosbridge_library.capabilities.defragmentation.Defragment'>
+ - <class 'rosbridge_library.capabilities.advertise_service.AdvertiseService'>
+ - <class 'rosbridge_library.capabilities.call_service.CallService'>
+ - <class 'rosbridge_library.capabilities.service_response.ServiceResponse'>
+ - <class 'rosbridge_library.capabilities.unadvertise_service.UnadvertiseService'>
+ - <class 'rosbridge_library.capabilities.advertise_action.AdvertiseAction'>
+ - <class 'rosbridge_library.capabilities.action_feedback.ActionFeedback'>
+ - <class 'rosbridge_library.capabilities.action_result.ActionResult'>
+ - <class 'rosbridge_library.capabilities.send_action_goal.SendActionGoal'>
+ - <class 'rosbridge_library.capabilities.unadvertise_action.UnadvertiseAction'>
+Exiting due to SIGINT

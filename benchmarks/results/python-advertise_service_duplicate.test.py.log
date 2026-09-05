@@ -1,0 +1,19 @@
+2026-09-05 11:41:43+0000 [-] Log opened.
+2026-09-05 11:41:43+0000 [-] Starting factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff903f9b80>
+2026-09-05 11:41:43+0000 [-] WebSocket client sent message: b'{"op": "advertise_service", "type": "std_srvs/SetBool", "service": "/test_service"}'
+[INFO] [1788608503.479953712] [test_double_advertise]: Received message on WebSocket 1: {'op': 'call_service', 'id': 'service_request:/test_service:1', 'service': '/test_service', 'args': {'data': True}}
+[INFO] [1788608503.480560253] [test_double_advertise]: Received all messages on WebSocket 1
+2026-09-05 11:41:43+0000 [-] Starting factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff903fb2c0>
+2026-09-05 11:41:43+0000 [-] Stopping factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff903f9b80>
+2026-09-05 11:41:43+0000 [-] WebSocket client sent message: b'{"op": "advertise_service", "type": "std_srvs/SetBool", "service": "/test_service"}'
+[INFO] [1788608504.495825171] [test_double_advertise]: Received message on WebSocket 2: {'op': 'call_service', 'id': 'service_request:/test_service:1', 'service': '/test_service', 'args': {'data': False}}
+[INFO] [1788608504.496634712] [test_double_advertise]: Received all messages on WebSocket 2
+2026-09-05 11:41:44+0000 [-] WebSocket client sent message: b'{"op": "service_response", "service": "/test_service", "values": {"success": true, "message": "Hello world 2"}, "id": "service_request:/test_service:1", "result": true}'
+2026-09-05 11:41:44+0000 [-] Stopping factory <autobahn.twisted.websocket.WebSocketClientFactory object at 0xffff903fb2c0>
+2026-09-05 11:41:44+0000 [-] Main loop terminated.
+2026-09-05 11:41:44+0000 [-] test_double_advertise (upstream_case.TestAdvertiseService.test_double_advertise) ... ok
+2026-09-05 11:41:44+0000 [-] 
+2026-09-05 11:41:44+0000 [-] ----------------------------------------------------------------------
+2026-09-05 11:41:44+0000 [-] Ran 1 test in 1.394s
+2026-09-05 11:41:44+0000 [-] 
+2026-09-05 11:41:44+0000 [-] OK
