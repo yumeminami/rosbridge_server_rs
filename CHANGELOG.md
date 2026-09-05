@@ -6,6 +6,8 @@ Changes are recorded here before release. No version has been released yet.
 
 ### Added
 
+- Tag-triggered CI with native Linux x86_64 and ARM64 builds and ROS 2 tests.
+- Release binary archives and SHA-256 checksums for tag and manual workflow runs.
 - Rust ROS 2 WebSocket server with rosbridge topic, service and Action operations.
 - Runtime message introspection for custom interfaces, nested messages and arrays.
 - JSON, CBOR, CBOR-RAW, PNG and JSON fragmentation support.

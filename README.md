@@ -99,8 +99,14 @@ benchmarks/        Reproducible measurements and plots
 Use `cargo fmt` for Rust and `black --line-length 100` for Python. Keep native ROS
 handles on the worker thread; WebSocket tasks communicate through bounded queues.
 
-CI runs the same checks on pushes and pull requests, including the upstream
-WebSocket cases. See [CHANGELOG](CHANGELOG.md) for changes awaiting release.
+CI runs the same checks on branch pushes, tag pushes and pull requests, including
+the upstream WebSocket cases on native Linux x86_64 and ARM64 runners. Tag and
+manual builds also upload release binaries with SHA-256 checksums as workflow
+artifacts. These binaries require ROS 2 Jazzy and the application's ROS interface
+libraries; they are not standalone executables. Download the archive matching your
+architecture from the workflow run's **Artifacts** section.
+
+See [CHANGELOG](CHANGELOG.md) for changes awaiting release.
 
 ## License
 
