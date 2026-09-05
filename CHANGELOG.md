@@ -9,6 +9,8 @@ Release history for rosbridge_server_rs.
 - Platform wheels for uv and uvx, with automatic x86_64 and ARM64 selection.
 - Clean-runtime uvx and persistent uv tool installation checks on both architectures.
 - ROS 2 Humble packages and integration tests alongside Jazzy.
+- Record Humble Python rosbridge's event-loop starvation failure separately;
+  the Rust implementation must still pass the same test.
 - Accept Cyclone DDS or Fast DDS as the installed RMW and provide both underscore
   and hyphen command names.
 

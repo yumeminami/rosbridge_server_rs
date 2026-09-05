@@ -20,19 +20,19 @@ import sys
 import tempfile
 import types
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 RUNNER = Path(__file__).resolve().parents[1] / "benchmarks/parity.py"
 
 
 class ParityRunnerTests(unittest.TestCase):
-    def run_case(self, outcome, *, missing=False):
+    def run_case(self, outcome, *, missing=False, case="smoke.test.py", output="test output"):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             cases = root / "rosbridge_server/test/websocket"
             cases.mkdir(parents=True)
             if not missing:
-                (cases / "smoke.test.py").touch()
+                (cases / case).touch()
             support = types.ModuleType("server")
             support.UPSTREAM = root
             support.python_environment = lambda: {}
@@ -42,11 +42,12 @@ class ParityRunnerTests(unittest.TestCase):
                 patch.dict(sys.modules, {"server": support}),
                 patch.dict(os.environ, {"ROSBRIDGE_TEST_RESULTS": str(result_dir)}),
                 patch.object(sys, "argv", [str(RUNNER)]),
+                patch("subprocess.Popen", return_value=Mock()),
                 patch(
                     "subprocess.run",
                     side_effect=outcome if isinstance(outcome, Exception) else None,
                     return_value=subprocess.CompletedProcess(
-                        [], outcome if isinstance(outcome, int) else 0, stdout="test output"
+                        [], outcome if isinstance(outcome, int) else 0, stdout=output
                     ),
                 ),
                 self.assertRaises(SystemExit) as exit_status,
@@ -72,6 +73,16 @@ class ParityRunnerTests(unittest.TestCase):
         code, results = self.run_case(subprocess.TimeoutExpired("test", 100))
         self.assertEqual(code, 1)
         self.assertEqual([row["status"] for row in results], ["timeout", "timeout"])
+
+    def test_humble_baseline_failure_does_not_hide_rust_failure(self):
+        with patch.dict(os.environ, {"ROS_DISTRO": "humble"}):
+            code, results = self.run_case(
+                1,
+                case="event_loop_starvation.test.py",
+                output="Event-loop starvation detected",
+            )
+        self.assertEqual(code, 1)
+        self.assertEqual([row["status"] for row in results], ["known baseline failure", "failed"])
 
     def test_missing_cases(self):
         code, results = self.run_case(0, missing=True)
