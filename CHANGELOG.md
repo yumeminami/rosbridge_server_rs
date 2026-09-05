@@ -6,8 +6,9 @@ Changes are recorded here before release. No version has been released yet.
 
 ### Added
 
-- Start and supervise a rosapi child node by default; use `--no-rosapi` for an
-  independently managed node.
+- Implement all 29 rosapi service interfaces natively in Rust, including graph
+  queries, recursive type definitions and asynchronous parameter operations.
+- Compare rosapi interfaces against Python and measure same-host idle CPU.
 - Tag-triggered CI with native Linux x86_64 and ARM64 builds and ROS 2 tests.
 - Release binary archives and SHA-256 checksums for tag and manual workflow runs.
 - Rust ROS 2 WebSocket server with rosbridge topic, service and Action operations.
@@ -38,8 +39,9 @@ Changes are recorded here before release. No version has been released yet.
 
 ### Changed
 
-- Reduce idle ROS worker polling from 500 to 10 wakeups per second; incoming
-  WebSocket commands still wake the worker immediately.
+- Wait on RCL events and wake the ROS worker with a guard condition for WebSocket
+  commands; stop allocating and taking messages from inactive ROS entities.
+- Remove the Python rosapi child process and its extra DDS participant.
 - Document the Ubuntu native build dependencies in the README.
 - Separate topic, service and Action handling from protocol dispatch.
 - Separate WebSocket connection handling from the command-line entry point.

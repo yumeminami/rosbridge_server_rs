@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
 #
 
-"""Real ROS 2 + WebSocket contract tests, including the managed rosapi node."""
+"""Real ROS 2 + WebSocket contract tests, including native rosapi services."""
 import asyncio
 import base64
 import io
@@ -91,10 +91,10 @@ def server(tmp_path_factory):
                 return False
 
         wait_until(ready)
-        children = subprocess.check_output(
-            ["ps", "--ppid", str(process.pid), "-o", "pid="], text=True
-        ).split()
-        assert len(children) == 1, "expected one managed rosapi child"
+        children = subprocess.run(
+            ["ps", "--ppid", str(process.pid), "-o", "pid="], capture_output=True, text=True
+        )
+        assert not children.stdout.strip(), "native server must not start Python children"
         yield f"ws://127.0.0.1:{port}"
         process.send_signal(signal.SIGINT)
         try:
@@ -104,8 +104,6 @@ def server(tmp_path_factory):
             process.wait()
             pytest.fail("server did not shut down")
         assert process.returncode == 0, log.read_text()
-        with pytest.raises(ProcessLookupError):
-            os.kill(int(children[0]), 0)
 
 
 async def send(ws, **message):
@@ -124,7 +122,7 @@ def unique(prefix):
     return "/" + prefix + "_" + uuid.uuid4().hex[:8]
 
 
-def test_managed_rosapi_accepts_legacy_type(server, ros):
+def test_native_rosapi_accepts_legacy_type(server, ros):
     wait_until(
         lambda: any(name == "/rosapi/topics" for name, _ in ros.get_service_names_and_types())
     )

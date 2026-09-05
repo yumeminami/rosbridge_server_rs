@@ -1,0 +1,10 @@
+{
+  "seconds": 10.0,
+  "trials": 3,
+  "machine": "x86_64",
+  "ros_distro": "jazzy",
+  "rmw": "rmw_cyclonedds_cpp",
+  "scope": "server plus rosapi; excludes ROS CLI daemon",
+  "subscription_topic": "/rosbridge_idle_probe",
+  "publisher_count": 0
+}

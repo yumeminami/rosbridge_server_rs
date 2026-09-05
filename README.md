@@ -21,6 +21,17 @@ Measured JSON topic roundtrips on Linux ARM64 / ROS 2 Jazzy, with 32 messages in
 
 [Method and reproduction](benchmarks/README.md) · [Latency, CPU, memory and raw results](benchmarks/results/README.md)
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="benchmarks/results/idle/comparison-dark.svg">
+  <img alt="Idle CPU and memory on Linux x86_64. All three trials are shown for Python rosbridge plus rosapi and Rust with native rosapi." src="benchmarks/results/idle/comparison-light.svg" width="1000">
+</picture>
+
+Same-host idle comparison, including rosapi: median CPU after unsubscribe was
+**0.40% for Rust and 0.80% for Python**; with a connection but no subscriptions,
+both were approximately **0.50%**. Three 10-second trials per state, with all
+first-trial spikes retained. This measures idle operation, not camera throughput.
+[Raw data, caveats and reproduction](benchmarks/results/idle/README.md).
+
 ## Build and run
 
 Requires Linux, ROS 2 Jazzy, and Rust 1.93 or later. On Ubuntu, install the
@@ -28,7 +39,7 @@ native build dependencies:
 
 ```bash
 sudo apt update
-sudo apt install build-essential clang libclang-dev pkg-config libssl-dev ros-jazzy-rosapi
+sudo apt install build-essential clang libclang-dev pkg-config libssl-dev ros-jazzy-rosapi-msgs
 ```
 
 Install the ROS interface packages used by your application, including their C
@@ -42,8 +53,9 @@ cargo build --locked --release
 ```
 
 Connect your rosbridge client to `ws://127.0.0.1:9090`.
-The server starts a `rosapi` child node automatically and stops it on exit.
-Use `--no-rosapi` if you already run a separate rosapi node.
+All 29 `/rosapi/*` services are implemented in Rust and enabled by default.
+Use `--no-rosapi` if another node already provides them.
+See [rosapi interfaces and configuration](docs/rosapi.md).
 See [configuration and examples](docs/usage.md) for CLI options and WebSocket usage.
 
 ## Protocol support
@@ -60,8 +72,8 @@ See [configuration and examples](docs/usage.md) for CLI options and WebSocket us
 cover message conversion, resource ownership and error handling. See the
 [compatibility results](benchmarks/README.md#compatibility-results).
 
-This is an early implementation. It uses the Python `rosapi` package for graph
-introspection and does not support all Python server configuration. Use absolute ROS names. Native macOS builds,
+This is an early implementation and does not support all Python server
+configuration. Use absolute ROS names. Native macOS builds,
 other ROS distributions and production stability remain unverified.
 [Protocol boundaries](docs/usage.md#limitations) are documented explicitly.
 

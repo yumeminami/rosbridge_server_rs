@@ -138,23 +138,13 @@ fn receive(rx: &mut mpsc::Receiver<Vec<Message>>) -> Value {
 }
 
 #[test]
-fn polling_stops_after_last_subscription_is_removed() {
+fn event_wait_respects_service_deadlines() {
     let (mut bridge, _rx) = setup();
-    assert!(!bridge.needs_polling());
-    bridge.command(
-        1,
-        json!({"op":"subscribe","topic":"/idle_test","type":"std_msgs/String"}),
-    );
-    assert!(bridge.needs_polling());
-    bridge.command(1, json!({"op":"unsubscribe","topic":"/idle_test"}));
-    assert!(!bridge.needs_polling());
-    bridge.command(
-        1,
-        json!({"op":"advertise_service","service":"/idle_service","type":"example_interfaces/AddTwoInts"}),
-    );
-    assert!(bridge.needs_polling());
+    assert_eq!(bridge.next_wakeup(), Duration::from_millis(100));
+    bridge.command(1, json!({"op":"call_service","service":"/deadline_test","type":"example_interfaces/AddTwoInts","args":{},"timeout":0.01}));
+    assert!(bridge.next_wakeup() <= Duration::from_millis(10));
     bridge.disconnect(1);
-    assert!(!bridge.needs_polling());
+    assert_eq!(bridge.next_wakeup(), Duration::from_millis(100));
 }
 
 #[test]

@@ -15,6 +15,24 @@ use crate::Args;
 use anyhow::{Context, Result};
 use std::time::Duration;
 
+#[derive(Clone)]
+struct Sender {
+    channel: std::sync::mpsc::SyncSender<Command>,
+    wake: rosbridge_server_rs::ros::Wake,
+}
+impl Sender {
+    fn try_send(&self, command: Command) -> Result<()> {
+        self.channel.try_send(command)?;
+        self.wake.trigger();
+        Ok(())
+    }
+    fn send(&self, command: Command) -> Result<()> {
+        self.channel.send(command)?;
+        self.wake.trigger();
+        Ok(())
+    }
+}
+
 enum Command {
     Connect(u64, rosbridge_server_rs::bridge::Output),
     Message(u64, serde_json::Value),
@@ -37,7 +55,7 @@ pub(super) async fn run(args: Args) -> Result<()> {
     let worker = std::thread::Builder::new()
         .name("rosbridge-rcl".into())
         .spawn(move || -> Result<()> {
-            let backend = match Ros::new(
+            let mut backend = match Ros::new(
                 &args.node_name,
                 &args.namespace,
                 args.use_sim_time,
@@ -49,23 +67,25 @@ pub(super) async fn run(args: Args) -> Result<()> {
                     return Err(e);
                 }
             };
+            if !args.no_rosapi
+                && let Err(error) = backend.enable_rosapi(&args.ros_args)
+            {
+                let _ = ready_tx.send(Err(format!("{error:#}")));
+                return Err(error);
+            }
             let mut bridge = Bridge::new(backend, timeout);
-            let _ = ready_tx.send(Ok(()));
+            let _ = ready_tx.send(Ok(bridge.backend.wake_handle()));
             loop {
-                for i in 0..64 {
-                    let command = if i == 0 {
-                        let interval = if args.use_sim_time || bridge.needs_polling() {
-                            Duration::from_millis(2)
-                        } else {
-                            Duration::from_millis(100)
-                        };
-                        match receiver.recv_timeout(interval) {
-                            Ok(c) => Some(c),
-                            Err(mpsc::RecvTimeoutError::Timeout) => None,
-                            Err(mpsc::RecvTimeoutError::Disconnected) => Some(Command::Shutdown),
-                        }
-                    } else {
-                        receiver.try_recv().ok()
+                let wait = bridge.next_wakeup();
+                bridge.backend.wait(wait)?;
+                for index in 0..64 {
+                    if index == 63 {
+                        bridge.backend.wake_handle().trigger();
+                    }
+                    let command = match receiver.try_recv() {
+                        Ok(command) => Some(command),
+                        Err(mpsc::TryRecvError::Empty) => None,
+                        Err(mpsc::TryRecvError::Disconnected) => Some(Command::Shutdown),
                     };
                     let Some(command) = command else {
                         break;
@@ -83,7 +103,11 @@ pub(super) async fn run(args: Args) -> Result<()> {
                 bridge.tick()?;
             }
         })?;
-    ready_rx.await?.map_err(anyhow::Error::msg)?;
+    let wake = ready_rx.await?.map_err(anyhow::Error::msg)?;
+    let sender = Sender {
+        channel: sender,
+        wake,
+    };
     let listener = match TcpListener::bind(args.bind).await {
         Ok(l) => l,
         Err(e) => {
@@ -132,7 +156,7 @@ async fn connection(
     stream: tokio::net::TcpStream,
     id: u64,
     max: usize,
-    sender: std::sync::mpsc::SyncSender<Command>,
+    sender: Sender,
 ) -> Result<()> {
     use futures_util::{SinkExt, StreamExt};
     use rosbridge_server_rs::wire::Decoder;

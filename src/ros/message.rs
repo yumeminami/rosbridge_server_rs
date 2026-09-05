@@ -229,12 +229,12 @@ unsafe fn write_object(
     } else {
         value.clone()
     };
-    if typ == "builtin_interfaces/msg/Time" {
-        if let Some(object) = value.as_object_mut() {
-            for (alias, field) in [("secs", "sec"), ("nsecs", "nanosec")] {
-                if let Some(value) = object.remove(alias) {
-                    object.entry(field).or_insert(value);
-                }
+    if typ == "builtin_interfaces/msg/Time"
+        && let Some(object) = value.as_object_mut()
+    {
+        for (alias, field) in [("secs", "sec"), ("nsecs", "nanosec")] {
+            if let Some(value) = object.remove(alias) {
+                object.entry(field).or_insert(value);
             }
         }
     }
@@ -500,4 +500,112 @@ unsafe fn read_scalar(f: &Member, p: *const c_void) -> Result<(Value, Cbor)> {
         _ => crate::wire::cbor_value(&value),
     };
     Ok((value, cbor))
+}
+
+impl MessageType {
+    pub(super) fn dependencies(&self) -> Vec<String> {
+        unsafe {
+            fields(self.members)
+                .iter()
+                .filter(|f| f.type_id_ == 18)
+                .map(|f| message_name(nested(f)))
+                .collect()
+        }
+    }
+    pub(super) fn typedefs(self: &Rc<Self>) -> Result<Value> {
+        let mut seen = std::collections::HashSet::new();
+        let mut result = Vec::new();
+        fn visit(
+            typ: Rc<MessageType>,
+            seen: &mut std::collections::HashSet<String>,
+            result: &mut Vec<Value>,
+        ) -> Result<()> {
+            unsafe {
+                let full = message_name(typ.members);
+                if !seen.insert(full.clone()) {
+                    return Ok(());
+                }
+                let defaults = typ.message().values()?.0;
+                let mut names = Vec::new();
+                let mut types = Vec::new();
+                let mut lengths = Vec::new();
+                let mut examples = Vec::new();
+                let mut dependencies = Vec::new();
+                for field in fields(typ.members) {
+                    let key = name(field.name_);
+                    if key == "structure_needs_at_least_one_member" {
+                        continue;
+                    }
+                    let nested_type = if field.type_id_ == 18 {
+                        Some(message_name(nested(field)))
+                    } else {
+                        None
+                    };
+                    let fieldtype = match field.type_id_ {
+                        1 => "float".into(),
+                        2 => "double".into(),
+                        3 => "long double".into(),
+                        4 => "uint8".into(),
+                        5 => "wchar".into(),
+                        6 => "boolean".into(),
+                        7 => "octet".into(),
+                        8 => "uint8".into(),
+                        9 => "int8".into(),
+                        10 => "uint16".into(),
+                        11 => "int16".into(),
+                        12 => "uint32".into(),
+                        13 => "int32".into(),
+                        14 => "uint64".into(),
+                        15 => "int64".into(),
+                        16 => "string".into(),
+                        17 => "wstring".into(),
+                        18 => nested_type.as_ref().unwrap().replace("/msg/", "/"),
+                        _ => bail!("unknown field type"),
+                    };
+                    lengths.push(if !field.is_array_ {
+                        -1
+                    } else if field.is_upper_bound_ {
+                        0
+                    } else {
+                        field.array_size_ as i64
+                    });
+                    examples.push(if field.is_array_ {
+                        "[]".into()
+                    } else if field.type_id_ == 18 {
+                        "{}".into()
+                    } else if field.type_id_ == 7 {
+                        let byte = defaults[&key].as_u64().unwrap_or(0) as u8;
+                        match byte {
+                            b'\n' => "b'\\n'".into(),
+                            b'\r' => "b'\\r'".into(),
+                            b'\t' => "b'\\t'".into(),
+                            b'\\' => "b'\\\\'".into(),
+                            b'\'' => "b\"'\"".into(),
+                            32..=126 => format!("b'{}'", byte as char),
+                            _ => format!("b'\\x{byte:02x}'"),
+                        }
+                    } else {
+                        match &defaults[&key] {
+                            Value::String(s) => s.clone(),
+                            Value::Bool(b) => if *b { "True" } else { "False" }.into(),
+                            value => value.to_string(),
+                        }
+                    });
+                    names.push(key);
+                    types.push(fieldtype);
+                    if let Some(dependency) = nested_type {
+                        dependencies.push(dependency);
+                    }
+                }
+                let constants = super::definitions::constants(&full);
+                result.push(json!({"type":full.replace("/msg/","/").replace("/srv/","/").replace("/action/","/"),"fieldnames":names,"fieldtypes":types,"fieldarraylen":lengths,"examples":examples,"constnames":constants.keys().collect::<Vec<_>>(),"constvalues":constants.values().collect::<Vec<_>>()}));
+                for dependency in dependencies {
+                    visit(MessageType::load(&dependency)?, seen, result)?;
+                }
+            }
+            Ok(())
+        }
+        visit(self.clone(), &mut seen, &mut result)?;
+        Ok(json!(result))
+    }
 }

@@ -1,0 +1,128 @@
+[
+  {
+    "server": "python",
+    "state": "disconnected",
+    "trial": 0,
+    "cpu_percent": 5.694046043495267,
+    "rss_bytes": 159158272
+  },
+  {
+    "server": "python",
+    "state": "connected",
+    "trial": 0,
+    "cpu_percent": 5.794028153718938,
+    "rss_bytes": 158896128
+  },
+  {
+    "server": "python",
+    "state": "unsubscribed",
+    "trial": 0,
+    "cpu_percent": 6.095980349496866,
+    "rss_bytes": 160526336
+  },
+  {
+    "server": "rust",
+    "state": "disconnected",
+    "trial": 0,
+    "cpu_percent": 2.3975054583536,
+    "rss_bytes": 22294528
+  },
+  {
+    "server": "rust",
+    "state": "connected",
+    "trial": 0,
+    "cpu_percent": 1.8981311731441524,
+    "rss_bytes": 21901312
+  },
+  {
+    "server": "rust",
+    "state": "unsubscribed",
+    "trial": 0,
+    "cpu_percent": 0.29978780557410617,
+    "rss_bytes": 22339584
+  },
+  {
+    "server": "rust",
+    "state": "disconnected",
+    "trial": 1,
+    "cpu_percent": 0.39958203914001345,
+    "rss_bytes": 20516864
+  },
+  {
+    "server": "rust",
+    "state": "connected",
+    "trial": 1,
+    "cpu_percent": 0.3995917083367006,
+    "rss_bytes": 20598784
+  },
+  {
+    "server": "rust",
+    "state": "unsubscribed",
+    "trial": 1,
+    "cpu_percent": 0.399731695734724,
+    "rss_bytes": 20996096
+  },
+  {
+    "server": "python",
+    "state": "disconnected",
+    "trial": 1,
+    "cpu_percent": 0.6993172214223603,
+    "rss_bytes": 153042944
+  },
+  {
+    "server": "python",
+    "state": "connected",
+    "trial": 1,
+    "cpu_percent": 0.4994377172941093,
+    "rss_bytes": 153190400
+  },
+  {
+    "server": "python",
+    "state": "unsubscribed",
+    "trial": 1,
+    "cpu_percent": 0.49966479438279116,
+    "rss_bytes": 152543232
+  },
+  {
+    "server": "python",
+    "state": "disconnected",
+    "trial": 2,
+    "cpu_percent": 0.49947385532809213,
+    "rss_bytes": 152334336
+  },
+  {
+    "server": "python",
+    "state": "connected",
+    "trial": 2,
+    "cpu_percent": 0.4994800432235331,
+    "rss_bytes": 152702976
+  },
+  {
+    "server": "python",
+    "state": "unsubscribed",
+    "trial": 2,
+    "cpu_percent": 0.7994747828012332,
+    "rss_bytes": 152207360
+  },
+  {
+    "server": "rust",
+    "state": "disconnected",
+    "trial": 2,
+    "cpu_percent": 0.39960896161297144,
+    "rss_bytes": 20635648
+  },
+  {
+    "server": "rust",
+    "state": "connected",
+    "trial": 2,
+    "cpu_percent": 0.4994882135249999,
+    "rss_bytes": 20709376
+  },
+  {
+    "server": "rust",
+    "state": "unsubscribed",
+    "trial": 2,
+    "cpu_percent": 0.3997562176994683,
+    "rss_bytes": 21237760
+  }
+]

@@ -391,14 +391,31 @@ impl<B: Backend> Bridge<B> {
         Ok(())
     }
 
-    /// Whether ROS input or a pending response needs frequent polling.
-    pub fn needs_polling(&self) -> bool {
-        !self.subscriptions.is_empty()
-            || !self.calls.is_empty()
-            || !self.services.is_empty()
-            || !self.goals.is_empty()
-            || !self.action_servers.is_empty()
-            || !self.external.is_empty()
+    /// Bound the event wait by queued deliveries and response deadlines.
+    pub fn next_wakeup(&self) -> Duration {
+        let now = Instant::now();
+        let mut wait = Duration::from_millis(100);
+        for call in self.calls.values() {
+            wait = wait.min(call.expires.saturating_duration_since(now));
+        }
+        for request in self.external.values() {
+            wait = wait.min(request.expires.saturating_duration_since(now));
+        }
+        for goal in self.goals.values().filter(|goal| !goal.accepted) {
+            wait = wait.min(goal.acceptance_deadline.saturating_duration_since(now));
+        }
+        for client in self.subscriptions.values().flat_map(|s| s.clients.values()) {
+            if !client.pending.is_empty() {
+                let remaining = client.last.map_or(Duration::ZERO, |last| {
+                    client
+                        .options()
+                        .throttle
+                        .saturating_sub(now.duration_since(last))
+                });
+                wait = wait.min(remaining);
+            }
+        }
+        wait
     }
 
     pub fn tick(&mut self) -> Result<()> {

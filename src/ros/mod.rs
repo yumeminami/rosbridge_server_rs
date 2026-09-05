@@ -11,7 +11,11 @@
 
 //! RCL/RMW backend; every handle remains on the bridge worker thread.
 #![allow(unsafe_op_in_unsafe_fn)]
+mod api;
+mod definitions;
+mod graph;
 mod message;
+mod wait;
 use crate::backend::*;
 use anyhow::{Context, Result, bail};
 use message::{MessageType, ServiceType};
@@ -25,6 +29,7 @@ use std::{
     slice,
     time::{SystemTime, UNIX_EPOCH},
 };
+pub use wait::Wake;
 
 pub(super) fn check(ret: rcl_ret_t) -> Result<()> {
     if ret == 0 {
@@ -48,6 +53,8 @@ enum Handle {
 }
 
 pub struct Ros {
+    wait: Option<wait::Wait>,
+    api: Option<api::Api>,
     context: Box<rcl_context_t>,
     node: Box<rcl_node_t>,
     handles: HashMap<Entity, Handle>,
@@ -99,6 +106,8 @@ impl Ros {
             }
             result?;
             let mut ros = Self {
+                wait: None,
+                api: None,
                 context,
                 node,
                 handles: HashMap::new(),
@@ -108,6 +117,7 @@ impl Ros {
                 simulated: simulated.then_some((0, 0)),
                 clock_subscription: None,
             };
+            ros.wait = Some(wait::Wait::new(&mut ros.context)?);
             if simulated {
                 ros.clock_subscription = Some(ros.subscription(
                     "/clock",
@@ -117,6 +127,11 @@ impl Ros {
             }
             Ok(ros)
         }
+    }
+
+    pub fn enable_rosapi(&mut self, args: &[String]) -> Result<()> {
+        self.api = Some(api::Api::new(self, args)?);
+        Ok(())
     }
 
     fn insert(&mut self, handle: Handle) -> Entity {
@@ -331,6 +346,9 @@ impl Backend for Ros {
         let mut events = Vec::new();
         let now = self.now();
         for (&id, handle) in &self.handles {
+            if !self.wait.as_ref().unwrap().ready(id) {
+                continue;
+            }
             unsafe {
                 // A per-entity budget prevents a hot camera stream starving requests.
                 for _ in 0..32 {
@@ -395,7 +413,13 @@ impl Backend for Ros {
                 }
             }
         }
-        Ok(events)
+        if let Some(mut api) = self.api.take() {
+            let result = api.process(self, events);
+            self.api = Some(api);
+            result
+        } else {
+            Ok(events)
+        }
     }
 
     fn topics(&mut self) -> Result<BTreeMap<String, Vec<String>>> {
@@ -455,6 +479,7 @@ impl Backend for Ros {
 
 impl Drop for Ros {
     fn drop(&mut self) {
+        self.wait.take();
         let ids: Vec<_> = self.handles.keys().copied().collect();
         for id in ids {
             self.destroy(id);

@@ -771,6 +771,7 @@ dependencies = [
  "ciborium",
  "clap",
  "futures-util",
+ "glob",
  "libloading",
  "png",
  "r2r_rcl",

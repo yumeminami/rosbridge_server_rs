@@ -8,7 +8,7 @@
 | `--node-name` | `rosbridge_websocket` | ROS node name |
 | `--namespace` | `/` | ROS node namespace |
 | `--use-sim-time` | Disabled | Read time from `/clock` |
-| `--no-rosapi` | Disabled | Use an independently managed rosapi node |
+| `--no-rosapi` | Disabled | Disable built-in rosapi services |
 | `--service-timeout` | `30` | Service response and Action acceptance timeout, in seconds |
 | `--max-message-size` | `16777216` | Maximum incoming message size, in bytes |
 
@@ -42,10 +42,9 @@ ws.onopen = () => {
 
 This is an early implementation, not a complete replacement for every component of rosbridge_suite.
 
-- The server starts the installed Python `rosapi_node` as a child, inheriting the
-  sourced ROS environment. It provides `/rosapi/*` services and is stopped when
-  the server exits. Install `ros-jazzy-rosapi`, or use `--no-rosapi` with an existing
-  node. The server exits if its rosapi child terminates unexpectedly.
+- All 29 rosapi service interfaces run inside the Rust ROS worker. Install
+  `ros-jazzy-rosapi-msgs` for their C type support. Use `--no-rosapi` when another
+  node provides them. See [rosapi](rosapi.md) for configuration and compatibility notes.
 - Use absolute topic, service, and Action names. Relative names resolve from `/`; private names and full namespace semantics are not supported.
 - TLS and authentication are not built in. Use a reverse proxy for WSS.
 - Shared subscriptions use Python’s encoding precedence: CBOR-RAW, CBOR, PNG, then JSON. Like Python rosbridge, binary CBOR output ignores `fragment_size`.
