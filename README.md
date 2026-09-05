@@ -56,31 +56,24 @@ summed RSS can count shared pages more than once. This is a live workload
 observation, not a controlled throughput, latency or frame-loss benchmark.
 [Raw samples and measurement limits](benchmarks/results/live/README.md).
 
-## Build and run
+## Install and run
 
-Requires Linux, ROS 2 Jazzy, and Rust 1.93 or later. On Ubuntu, install the
-native build dependencies:
-
-```bash
-sudo apt update
-sudo apt install build-essential clang libclang-dev pkg-config libssl-dev ros-jazzy-rosapi-msgs
-```
-
-Install the ROS interface packages used by your application, including their C
-typesupport and introspection libraries.
+Requires **Ubuntu 24.04 and ROS 2 Jazzy**. Download the `.deb` matching your
+architecture from [v0.1.0](https://github.com/yumeminami/rosbridge_server_rs/releases/tag/v0.1.0):
+`amd64` for Intel/AMD, or `arm64` for ARM64. With the ROS apt repository configured:
 
 ```bash
+sudo apt install ./rosbridge-server-rs_0.1.0_ubuntu24.04_amd64.deb
 source /opt/ros/jazzy/setup.bash
-# Source your ROS workspace here if you use custom interfaces.
-cargo build --locked --release
-./target/release/rosbridge_server_rs --bind 127.0.0.1:9090
+rosbridge_server_rs
 ```
 
-Connect your rosbridge client to `ws://127.0.0.1:9090`.
-All 29 `/rosapi/*` services are implemented in Rust and enabled by default.
-Use `--no-rosapi` if another node already provides them.
-See [rosapi interfaces and configuration](docs/rosapi.md).
-See [configuration and examples](docs/usage.md) for CLI options and WebSocket usage.
+Use the `arm64` filename on ARM64. Connect your client to `ws://localhost:9090`
+(or the server's IP address). All 29 rosapi services are built in.
+Source your ROS workspace before starting the server if you use custom messages.
+
+Archive installation and checksum verification: [installation guide](docs/install.md).
+Options: [usage](docs/usage.md). Developers: [build from source](docs/building.md).
 
 ## Protocol support
 
@@ -137,14 +130,12 @@ benchmarks/        Reproducible measurements and plots
 Use `cargo fmt` for Rust and `black --line-length 100` for Python. Keep native ROS
 handles on the worker thread; WebSocket tasks communicate through bounded queues.
 
-CI runs the same checks on branch pushes, tag pushes and pull requests, including
-the upstream WebSocket cases on native Linux x86_64 and ARM64 runners. Tag and
-manual builds also upload release binaries with SHA-256 checksums as workflow
-artifacts. These binaries require ROS 2 Jazzy and the application's ROS interface
-libraries; they are not standalone executables. Download the archive matching your
-architecture from the workflow run's **Artifacts** section.
+CI checks formatting, Clippy, protocol tests and upstream WebSocket compatibility
+on native Linux x86_64 and ARM64 runners. It also installs and tests each package
+in a clean ROS 2 Jazzy runtime container. Version tags publish tested `.deb` and
+`.tar.gz` packages with SHA-256 checksums to GitHub Releases.
 
-See [CHANGELOG](CHANGELOG.md) for changes awaiting release.
+See [CHANGELOG](CHANGELOG.md) for release history.
 
 ## License
 

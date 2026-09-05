@@ -105,21 +105,53 @@ jobs:
           path: ci-results/
           retention-days: 14
           if-no-files-found: warn
-      - name: Package release binary
-        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+      - name: Package release binaries
+        env:
+          GITHUB_REF_TYPE: ${{ github.ref_type }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
         run: |
-          mkdir -p ci-results/dist
-          docker compose run --rm test tar -czf \
-            /work/ci-results/dist/rosbridge_server_rs-linux-${{ matrix.arch }}.tar.gz \
-            -C /work/target/release rosbridge_server_rs \
-            -C /work LICENSE README.md
-          cd ci-results/dist
-          sha256sum *.tar.gz > SHA256SUMS
-      - name: Upload release binary
-        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+          docker compose run --rm -e GITHUB_REF_TYPE -e GITHUB_REF_NAME \
+            test bash scripts/package.sh
+      - name: Test installation in a clean runtime container
+        run: |
+          docker run --rm \
+            -v "$PWD/ci-results/dist:/dist:ro" \
+            -v "$PWD/scripts:/scripts:ro" \
+            -v "$PWD/tests:/tests:ro" \
+            ros:jazzy-ros-core bash /scripts/test_package.sh
+      - name: Upload release packages
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: rosbridge_server_rs-linux-${{ matrix.arch }}
           path: ci-results/dist/
           retention-days: 14
           if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [checks, ros2]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Download tested packages
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: gh run download "$RUN_ID" --pattern 'rosbridge_server_rs-linux-*' --dir dist
+      - name: Publish tested assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          cd dist
+          cat */SHA256SUMS-* > SHA256SUMS
+          gh release create "$RELEASE_TAG" --verify-tag --prerelease \
+            --title "$RELEASE_TAG" --notes-file ../docs/release-notes.md \
+            */*.deb */*.tar.gz SHA256SUMS

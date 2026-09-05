@@ -1,10 +1,15 @@
 # Changelog
 
-Changes are recorded here before release. No version has been released yet.
+Release history for rosbridge_server_rs.
 
-## Unreleased
+## 0.1.0 — 2026-09-05
+
+First early release for Ubuntu 24.04 and ROS 2 Jazzy, on amd64 and arm64.
 
 ### Added
+
+- Installable Debian packages and binary archives published to GitHub Releases.
+- Clean-runtime installation, native rosapi and ROS topic delivery smoke tests.
 
 - Implement all 29 rosapi service interfaces natively in Rust, including graph
   queries, recursive type definitions and asynchronous parameter operations.

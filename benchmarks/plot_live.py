@@ -51,14 +51,18 @@ for theme in ("light", "dark"):
         ax.legend(frameon=False, labelcolor=fg, loc="upper left")
         fig.text(0.07, 0.94, "Live browser workload", color=fg, fontsize=18, weight="bold")
         fig.text(
-            0.07, 0.87,
+            0.07,
+            0.87,
             "Shared ROS host · /diagnostics · one WebSocket connection per server",
-            color=fg, fontsize=10,
+            color=fg,
+            fontsize=10,
         )
         fig.text(
-            0.07, 0.025,
+            0.07,
+            0.025,
             "30 Docker snapshots · all samples shown · observed CPU, not throughput or latency",
-            color=fg, fontsize=9,
+            color=fg,
+            fontsize=9,
         )
         fig.subplots_adjust(left=0.09, right=0.97, top=0.79, bottom=0.19)
         svg = ROOT / f"comparison-{theme}.svg"
