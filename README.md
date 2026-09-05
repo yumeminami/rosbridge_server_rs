@@ -32,6 +32,28 @@ both were approximately **0.50%**. Three 10-second trials per state, with all
 first-trial spikes retained. This measures idle operation, not camera throughput.
 [Raw data, caveats and reproduction](benchmarks/results/idle/README.md).
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="benchmarks/results/live/comparison-dark.svg">
+  <img alt="Live diagnostics subscriptions: mean container CPU was 3.64% for Rust and 19.80% for Python plus rosapi across 30 samples." src="benchmarks/results/live/comparison-light.svg" width="1000">
+</picture>
+
+With two simultaneous browser sessions subscribing to `/diagnostics`, Rust used
+**82% less average container CPU** in this observation. Both servers ran on the
+same Linux x86_64 host with ROS 2 Jazzy. Thirty Docker snapshots were collected
+at approximately two-second intervals, without restarting either server.
+
+| Container metric | Rust + native rosapi | Python + rosapi |
+| --- | ---: | ---: |
+| Mean CPU | **3.64%** | 19.80% |
+| Median CPU | **3.57%** | 14.61% |
+| Peak sampled CPU | **4.63%** | 50.74% |
+| Final Docker memory | 514.2 MiB | **153.7 MiB** |
+
+CPU is expressed as a percentage of one core. Container memory includes more than
+server RSS; the Rust container had substantial file cache. This is a live workload
+observation, not a controlled throughput, latency or frame-loss benchmark.
+[Raw samples and measurement limits](benchmarks/results/live/README.md).
+
 ## Build and run
 
 Requires Linux, ROS 2 Jazzy, and Rust 1.93 or later. On Ubuntu, install the
