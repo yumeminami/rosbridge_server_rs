@@ -317,6 +317,22 @@ fn interface_names_are_normalized() {
 }
 
 #[test]
+fn legacy_rosapi_service_names_are_normalized() {
+    for name in [
+        "rosapi/TopicsAndRawTypes",
+        "rosapi/srv/TopicsAndRawTypes",
+        "rosapi_msgs/srv/TopicsAndRawTypes",
+    ] {
+        assert_eq!(
+            type_name(name, "srv").unwrap(),
+            "rosapi_msgs/srv/TopicsAndRawTypes"
+        );
+    }
+    assert_eq!(type_name("rosapi/Foo", "msg").unwrap(), "rosapi/msg/Foo");
+    assert_eq!(type_name("custom/Foo", "srv").unwrap(), "custom/srv/Foo");
+}
+
+#[test]
 fn unicode_fragments_roundtrip_out_of_order() {
     let value = json!({"op":"publish","topic":"/x","msg":{"data":"中文🦀"}});
     let options = Options {

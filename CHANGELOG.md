@@ -22,6 +22,8 @@ Changes are recorded here before release. No version has been released yet.
 
 ### Fixed
 
+- Accept legacy `rosapi` service type names from WebSocket clients as `rosapi_msgs`.
+- Include requested and discovered types in interface mismatch errors.
 - Validate Action results before caching them, allowing invalid results to be corrected.
 - Release consumed service requests and isolate request errors from the ROS worker.
 - Preserve queued topic-message order and replay transient-local samples to late clients.

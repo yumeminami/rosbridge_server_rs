@@ -166,7 +166,7 @@ fn duration(v: &Value) -> Result<(u64, u64)> {
 
 pub fn type_name(name: &str, category: &str) -> Result<String> {
     let parts: Vec<_> = name.split('/').collect();
-    let parts = match parts.as_slice() {
+    let mut parts = match parts.as_slice() {
         [package, typ] => vec![*package, category, *typ],
         [package, kind, typ] if *kind == category => vec![*package, *kind, *typ],
         _ => bail!("invalid {category} type: {name}"),
@@ -177,6 +177,10 @@ pub fn type_name(name: &str, category: &str) -> Result<String> {
             .all(|p| !p.is_empty() && p.bytes().all(|c| c.is_ascii_alphanumeric() || c == b'_')),
         "invalid interface type"
     );
+    // ROS 1 clients still use the rosapi package name for ROS 2 services.
+    if category == "srv" && parts[0] == "rosapi" {
+        parts[0] = "rosapi_msgs";
+    }
     Ok(parts.join("/"))
 }
 

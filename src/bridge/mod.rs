@@ -329,7 +329,10 @@ impl<B: Backend> Bridge<B> {
         if let Some(typ) = v.get("type") {
             let typ = type_name(typ.as_str().context("type must be a string")?, kind)?;
             if let Some(types) = graph.get(&topic) {
-                ensure!(types.iter().all(|t| t == &typ), "{topic} has another type");
+                ensure!(
+                    types.iter().all(|t| t == &typ),
+                    "{topic} has another type: requested {typ}, ROS graph {types:?}"
+                );
             }
             return Ok(typ);
         }
