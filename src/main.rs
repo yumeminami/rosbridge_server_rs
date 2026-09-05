@@ -10,7 +10,9 @@
 //
 
 use anyhow::Result;
-use clap::Parser;
+use clap::{CommandFactory, FromArgMatches, Parser};
+mod config;
+mod logging;
 use std::net::SocketAddr;
 
 #[cfg(feature = "ros2")]
@@ -19,6 +21,17 @@ mod server;
 #[derive(Parser, Debug)]
 #[command(version, about = "ROS 2 rosbridge WebSocket server")]
 struct Args {
+    /// Read settings from a TOML file. Explicit command-line flags take precedence.
+    #[arg(long)]
+    config: Option<std::path::PathBuf>,
+    #[arg(long, default_value = "/")]
+    url_path: String,
+    #[arg(long, default_value_t = 256)]
+    incoming_queue_size: usize,
+    #[arg(long, default_value_t = 64)]
+    write_queue_size: usize,
+    #[arg(long, default_value_t = 30.0)]
+    fragment_timeout: f64,
     #[arg(long, default_value = "0.0.0.0:9090")]
     bind: SocketAddr,
     #[arg(long, default_value = "rosbridge_websocket")]
@@ -41,12 +54,10 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
-        )
-        .init();
-    let args = Args::parse();
+    let matches = Args::command().get_matches();
+    let mut args = Args::from_arg_matches(&matches)?;
+    let log = config::load(&mut args, &matches)?;
+    let _log_guard = logging::init(&log)?;
     #[cfg(feature = "ros2")]
     {
         server::run(args).await

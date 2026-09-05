@@ -14,4 +14,4 @@ set -eo pipefail
 source scripts/prepare_ros.sh
 cargo test --locked
 cargo build --locked
-python3 -m pytest -q tests/test_websocket.py tests/test_rosapi.py "$@"
+python3 -m pytest -q tests/test_websocket.py tests/test_rosapi.py tests/test_config.py "$@"

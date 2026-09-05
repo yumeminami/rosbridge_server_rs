@@ -67,3 +67,5 @@ name. Message payloads and individual topic deliveries are not logged.
 Use `RUST_LOG=warn` to suppress lifecycle messages or `RUST_LOG=debug` for debugging.
 Service calls and action goals run through the ROS worker; the server does not
 report Python-specific thread creation events.
+
+File output and rotation: [configuration guide](configuration.md).

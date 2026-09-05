@@ -38,6 +38,7 @@ ln -s rosbridge_server_rs "$root/usr/bin/rosbridge-server-rs"
 strip "$root/usr/bin/rosbridge_server_rs"
 install -Dm644 LICENSE "$root/usr/share/doc/rosbridge-server-rs/copyright"
 install -Dm644 README.md "$root/usr/share/doc/rosbridge-server-rs/README.md"
+install -Dm644 rosbridge.toml "$root/usr/share/doc/rosbridge-server-rs/rosbridge.toml"
 mkdir -p "$work/debian" "$root/DEBIAN"
 cat > "$work/debian/control" <<CONTROL
 Source: rosbridge-server-rs
@@ -69,5 +70,5 @@ CONTROL
 dpkg-deb --root-owner-group --build "$root" "$output/$name.deb"
 tar -czf "$output/$name.tar.gz" \
     -C "$root/usr/bin" rosbridge_server_rs \
-    -C "$PWD" LICENSE README.md
+    -C "$PWD" LICENSE README.md rosbridge.toml
 (cd "$output" && sha256sum "$name.deb" "$name.tar.gz" > "SHA256SUMS-$ROS_DISTRO-$arch")

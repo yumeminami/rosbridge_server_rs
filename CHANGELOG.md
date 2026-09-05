@@ -4,6 +4,9 @@ Release history for rosbridge_server_rs.
 
 ## Unreleased
 
+- Add explicit TOML configuration with CLI precedence and documented Python launch parameter mapping.
+- Add rotating file logs with tracing-appender and client handshake/session metadata.
+
 - Log client connections, active client counts, topic subscriptions and cleanup
   at INFO, and failed protocol operations with their resource name at ERROR.
 - Add the 61-second ARM64 SoC CPU/RSS observation, raw samples and README charts.

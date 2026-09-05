@@ -50,6 +50,18 @@ Wheel download, persistent uv installation, archives and checksums:
 [installation guide](docs/install.md).
 Options: [usage](docs/usage.md). Developers: [build from source](docs/building.md).
 
+## Configuration and logs
+
+Source builds after v0.1.1 accept a TOML file:
+
+```bash
+rosbridge_server_rs --config rosbridge.toml
+```
+
+Use the [example configuration](rosbridge.toml) to set the listener, queues,
+timeouts and rotating file logs. Explicit command-line flags override the file.
+[Python launch parameter mapping and logging](docs/configuration.md)
+
 ## Protocol support
 
 | Area | Supported behavior |

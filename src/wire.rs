@@ -221,15 +221,26 @@ struct Assembly {
     created: Instant,
 }
 
-#[derive(Default)]
 pub struct Decoder {
     fragments: HashMap<String, Assembly>,
+    timeout: Duration,
+}
+impl Default for Decoder {
+    fn default() -> Self {
+        Self::with_timeout(Duration::from_secs(30))
+    }
 }
 
 impl Decoder {
+    pub fn with_timeout(timeout: Duration) -> Self {
+        Self {
+            fragments: HashMap::new(),
+            timeout,
+        }
+    }
     pub fn decode(&mut self, message: Message, limit: usize) -> Result<Option<Value>> {
         self.fragments
-            .retain(|_, a| a.created.elapsed() < Duration::from_secs(30));
+            .retain(|_, a| a.created.elapsed() < self.timeout);
         let value = match message {
             Message::Text(text) => {
                 ensure!(text.len() <= limit, "message too large");

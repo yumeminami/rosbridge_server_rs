@@ -49,9 +49,12 @@ pub(super) async fn run(args: Args) -> Result<()> {
         args.max_message_size > 0,
         "max-message-size must be positive"
     );
-    let (sender, receiver) = mpsc::sync_channel(256);
+    let (sender, receiver) = mpsc::sync_channel(args.incoming_queue_size);
     let (ready_tx, ready_rx) = tokio::sync::oneshot::channel();
     let max = args.max_message_size;
+    let write_queue = args.write_queue_size;
+    let fragment_timeout = Duration::from_secs_f64(args.fragment_timeout);
+    let url_path = args.url_path.clone();
     let worker = std::thread::Builder::new()
         .name("rosbridge-rcl".into())
         .spawn(move || -> Result<()> {
@@ -117,6 +120,8 @@ pub(super) async fn run(args: Args) -> Result<()> {
         }
     };
     tracing::info!(address=%listener.local_addr()?,"rosbridge WebSocket server listening");
+    let shutdown = tokio::signal::ctrl_c();
+    tokio::pin!(shutdown);
     let mut connections = JoinSet::new();
     let mut next = 0;
     loop {
@@ -125,13 +130,14 @@ pub(super) async fn run(args: Args) -> Result<()> {
                 let (stream, peer) = accepted?;
                 next += 1;
                 let tx = sender.clone();
+                let url_path = url_path.clone();
                 connections.spawn(async move {
-                    if let Err(e) = connection(stream, next, max, tx).await {
-                        tracing::debug!(%peer, "connection ended: {e:#}");
+                    if let Err(e) = connection(stream, next, max, write_queue, fragment_timeout, url_path, tx).await {
+                        tracing::warn!(connection = next, %peer, "connection ended: {e:#}");
                     }
                 });
             }
-            _ = tokio::signal::ctrl_c() => break,
+            _ = &mut shutdown => break,
             Some(result) = connections.join_next(), if !connections.is_empty() => {
                 if let Err(e) = result {
                     tracing::warn!("connection task failed: {e}");
@@ -156,14 +162,22 @@ async fn connection(
     stream: tokio::net::TcpStream,
     id: u64,
     max: usize,
+    write_queue: usize,
+    fragment_timeout: Duration,
+    url_path: String,
     sender: Sender,
 ) -> Result<()> {
     use futures_util::{SinkExt, StreamExt};
     use rosbridge_server_rs::wire::Decoder;
     use tokio_tungstenite::{
-        accept_async_with_config,
-        tungstenite::{Message, protocol::WebSocketConfig},
+        accept_hdr_async_with_config,
+        tungstenite::{
+            Message,
+            handshake::server::{Request, Response},
+            protocol::WebSocketConfig,
+        },
     };
+    let peer = stream.peer_addr()?;
     stream.set_nodelay(true)?;
     let config = WebSocketConfig {
         max_message_size: Some(max),
@@ -172,18 +186,58 @@ async fn connection(
     };
     let websocket = tokio::time::timeout(
         Duration::from_secs(10),
-        accept_async_with_config(stream, Some(config)),
+        accept_hdr_async_with_config(
+            stream,
+            |request: &Request, response: Response| {
+                if request.uri().path() != url_path {
+                    let mut error = tokio_tungstenite::tungstenite::http::Response::new(Some(
+                        "WebSocket path not found".into(),
+                    ));
+                    *error.status_mut() =
+                        tokio_tungstenite::tungstenite::http::StatusCode::NOT_FOUND;
+                    return Err(error);
+                }
+                let header = |name| {
+                    request
+                        .headers()
+                        .get(name)
+                        .and_then(|value| value.to_str().ok())
+                        .unwrap_or("")
+                };
+                tracing::info!(
+                    connection = id,
+                    %peer,
+                    path = request.uri().path(),
+                    origin = header("origin"),
+                    user_agent = header("user-agent"),
+                    forwarded_for = header("x-forwarded-for"),
+                    "WebSocket client handshake"
+                );
+                Ok(response)
+            },
+            Some(config),
+        ),
     )
     .await??;
+    let connected_at = std::time::Instant::now();
     let (mut sink, mut source) = websocket.split();
-    let (out_tx, mut out_rx) = tokio::sync::mpsc::channel(64);
+    let (out_tx, mut out_rx) = tokio::sync::mpsc::channel(write_queue);
     sender.try_send(Command::Connect(id, out_tx))?;
-    let mut decoder = Decoder::default();
+    let mut decoder = Decoder::with_timeout(fragment_timeout);
+    let mut close_code = None;
+    let mut close_reason = String::new();
     let result = async {
         loop {
             tokio::select! {
                 frame = source.next() => match frame {
-                    Some(Ok(Message::Close(_))) | None => break,
+                    Some(Ok(Message::Close(frame))) => {
+                        if let Some(frame) = frame {
+                            close_code = Some(u16::from(frame.code));
+                            close_reason = frame.reason.into_owned();
+                        }
+                        break;
+                    }
+                    None => break,
                     Some(Ok(Message::Ping(value))) => {
                         tokio::time::timeout(Duration::from_secs(10), sink.send(Message::Pong(value))).await??;
                     }
@@ -209,6 +263,14 @@ async fn connection(
         }
         Ok(())
     }.await;
+    tracing::info!(
+        connection = id,
+        %peer,
+        duration_seconds = connected_at.elapsed().as_secs_f64(),
+        ?close_code,
+        %close_reason,
+        "WebSocket session ended"
+    );
     // Closing the receiver also lets the ROS worker detect disconnect if its queue is full.
     drop(out_rx);
     let _ = sender.try_send(Command::Disconnect(id));
