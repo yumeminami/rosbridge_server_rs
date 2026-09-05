@@ -212,7 +212,7 @@ impl Api {
                 if let Some(names) = response["result"]["names"].as_array() {
                     for name in names.iter().filter_map(Value::as_str) {
                         let full = format!("{}:{name}", pending.node);
-                        if matches(&self.config.params, &full) {
+                        if matches(&self.config.params, name) {
                             group.names.push(full);
                         }
                     }

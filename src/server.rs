@@ -49,6 +49,7 @@ pub(super) async fn run(args: Args) -> Result<()> {
         args.max_message_size > 0,
         "max-message-size must be positive"
     );
+    let access = rosbridge_server_rs::access::Access::from_ros_args(&args.ros_args)?;
     let (sender, receiver) = mpsc::sync_channel(args.incoming_queue_size);
     let (ready_tx, ready_rx) = tokio::sync::oneshot::channel();
     let max = args.max_message_size;
@@ -77,6 +78,7 @@ pub(super) async fn run(args: Args) -> Result<()> {
                 return Err(error);
             }
             let mut bridge = Bridge::new(backend, timeout);
+            bridge.access = access;
             let _ = ready_tx.send(Ok(bridge.backend.wake_handle()));
             loop {
                 let wait = bridge.next_wakeup();

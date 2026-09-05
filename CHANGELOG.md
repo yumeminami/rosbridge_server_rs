@@ -2,7 +2,10 @@
 
 Release history for rosbridge_server_rs.
 
-## Unreleased
+## 0.1.2 — 2026-09-06
+
+- Create and load ~/.rosbridge_server_rs/rosbridge.toml on first server startup, preserving existing files.
+- Enforce topic, service and parameter allowlists on WebSocket forwarding as well as rosapi discovery; check action transports and block raw parameter-service bypasses.
 
 - Add explicit TOML configuration with CLI precedence and documented Python launch parameter mapping.
 - Add rotating file logs with tracing-appender and client handshake/session metadata.

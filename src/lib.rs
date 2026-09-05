@@ -9,6 +9,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
 //
 
+pub mod access;
 pub mod backend;
 pub mod bridge;
 #[cfg(feature = "ros2")]

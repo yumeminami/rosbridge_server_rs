@@ -15,11 +15,11 @@ message bindings or Python server process are required.
 
 Requires **ROS 2 Humble on Ubuntu 22.04** or **ROS 2 Jazzy on Ubuntu 24.04**.
 Download the `.deb` matching the ROS distribution and architecture from
-[v0.1.1](https://github.com/yumeminami/rosbridge_server_rs/releases/tag/v0.1.1):
+[v0.1.2](https://github.com/yumeminami/rosbridge_server_rs/releases/tag/v0.1.2):
 `amd64` for Intel/AMD, or `arm64` for ARM64. With the ROS apt repository configured:
 
 ```bash
-sudo apt install ./rosbridge-server-rs_0.1.1_jazzy_ubuntu24.04_amd64.deb
+sudo apt install ./rosbridge-server-rs_0.1.2_jazzy_ubuntu24.04_amd64.deb
 source /opt/ros/jazzy/setup.bash
 rosbridge_server_rs
 ```
@@ -52,15 +52,32 @@ Options: [usage](docs/usage.md). Developers: [build from source](docs/building.m
 
 ## Configuration and logs
 
-Source builds after v0.1.1 accept a TOML file:
+Version 0.1.2 and later create and load
+`~/.rosbridge_server_rs/rosbridge.toml` on first startup, without overwriting an
+existing file. This also applies when started through uvx or an installed uv tool;
+`uv tool install` itself does not run the server or create configuration.
+
+Edit that file, then restart the server. To select another file:
 
 ```bash
-rosbridge_server_rs --config rosbridge.toml
+rosbridge_server_rs --config /path/to/rosbridge.toml
 ```
 
-Use the [example configuration](rosbridge.toml) to set the listener, queues,
-timeouts and rotating file logs. Explicit command-line flags override the file.
-[Python launch parameter mapping and logging](docs/configuration.md)
+Use the [example configuration](rosbridge.toml) for listener settings, queues,
+timeouts, rotating file logs and forwarding allowlists. Explicit CLI flags override
+the file. For read-only access to the three monitoring topics:
+
+```toml
+topics_glob = []
+topics_pub_glob = []
+topics_sub_glob = ["/diagnostics", "/head_mount/imu", "/head_mount/button"]
+services_glob = ["/rosapi/topics", "/rosapi/topics_and_raw_types", "/rosapi/topic_type", "/rosapi/message_details", "/rosapi/get_time", "/rosapi/get_ros_version"]
+params_glob = []
+```
+
+Put these settings before `[log]`. Omitted allowlists permit everything;
+empty lists deny everything. `topics_glob` is added to both directional lists.
+[Configuration, access rules and Python launch parameter mapping](docs/configuration.md)
 
 ## Protocol support
 

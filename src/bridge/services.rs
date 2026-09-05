@@ -25,6 +25,7 @@ impl<B: Backend> Bridge<B> {
         let service = name(v, "service")?;
         let options = Options::parse(v)?;
         let typ = self.resolve(v, "service", "srv")?;
+        self.access.parameter_service(&typ, &v["args"])?;
         let timeout = if let Some(t) = v.get("timeout") {
             Duration::try_from_secs_f64(t.as_f64().context("timeout must be a number")?)?
         } else {
@@ -42,6 +43,7 @@ impl<B: Backend> Bridge<B> {
         self.calls.insert(
             (entity, sequence),
             Call {
+                parameter_names: typ == "rosapi_msgs/srv/GetParamNames",
                 owner,
                 id: id(v)?,
                 service,
@@ -55,6 +57,7 @@ impl<B: Backend> Bridge<B> {
     pub(super) fn advertise_service(&mut self, owner: Connection, v: &Value) -> Result<()> {
         let service = name(v, "service")?;
         let typ = type_name(required(v, "type")?, "srv")?;
+        self.access.advertise_service(&typ)?;
         if let Some(s) = self.services.get(&service) {
             ensure!(s.owner == owner, "service is advertised by another client");
             if s.typ == typ {

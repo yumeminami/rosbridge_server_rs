@@ -516,3 +516,133 @@ fn shared_subscription_uses_python_compression_precedence() {
     assert!(frames.len() > 1);
     assert!(matches!(frames[0], Message::Text(_)));
 }
+
+fn restricted(settings: &[&str]) -> (Bridge<TestRos>, mpsc::Receiver<Vec<Message>>) {
+    let (mut bridge, rx) = setup();
+    let args: Vec<String> = settings
+        .iter()
+        .flat_map(|v| ["-p".to_owned(), (*v).to_owned()])
+        .collect();
+    bridge.access = rosbridge_server_rs::access::Access::from_ros_args(&args).unwrap();
+    (bridge, rx)
+}
+
+#[test]
+fn forwarding_allowlists_reject_before_creating_entities() {
+    let (mut bridge, mut rx) = restricted(&[
+        "topics_glob:=[]",
+        "topics_pub_glob:=[/write/*]",
+        "topics_sub_glob:=[/read/*]",
+        "services_glob:=[]",
+    ]);
+    for request in [
+        json!({"op":"advertise","topic":"/read/imu","type":"std_msgs/String"}),
+        json!({"op":"publish","topic":"read/imu","type":"std_msgs/String","msg":{"data":"x"}}),
+        json!({"op":"subscribe","topic":"/write/cmd","type":"std_msgs/String"}),
+        json!({"op":"call_service","service":"/hidden","type":"std_srvs/Trigger"}),
+        json!({"op":"advertise_service","service":"/hidden","type":"std_srvs/Trigger"}),
+        json!({"op":"send_action_goal","action":"/move","type":"example_interfaces/Fibonacci"}),
+        json!({"op":"advertise_action","action":"/move","type":"example_interfaces/Fibonacci"}),
+    ] {
+        bridge.command(1, request);
+        let response = receive(&mut rx);
+        assert!(response.to_string().contains("denies"), "{response}");
+        assert!(bridge.backend.entities.is_empty());
+        assert!(bridge.backend.writes.is_empty());
+    }
+    bridge.command(
+        1,
+        json!({"op":"subscribe","topic":"/read/imu","type":"std_msgs/String"}),
+    );
+    bridge.command(
+        1,
+        json!({"op":"publish","topic":"/write/cmd","type":"std_msgs/String","msg":{"data":"ok"}}),
+    );
+    assert_eq!(bridge.backend.entities.len(), 2);
+    assert_eq!(bridge.backend.writes.len(), 1);
+    bridge.disconnect(1);
+    assert!(bridge.backend.entities.is_empty());
+}
+
+#[test]
+fn legacy_topics_union_and_explicit_ros_override() {
+    let (mut bridge, mut rx) = restricted(&[
+        "topics_glob:=['/shared/*']",
+        "topics_pub_glob:=[]",
+        "topics_sub_glob:=['/old/*']",
+        "topics_sub_glob:=['/read/*']",
+    ]);
+    for topic in ["/shared/data", "/read/data"] {
+        bridge.command(
+            1,
+            json!({"op":"subscribe","topic":topic,"type":"std_msgs/String"}),
+        );
+    }
+    bridge.command(
+        1,
+        json!({"op":"advertise","topic":"/shared/data","type":"std_msgs/String"}),
+    );
+    assert_eq!(bridge.backend.entities.len(), 3);
+    bridge.command(
+        1,
+        json!({"op":"subscribe","topic":"/old/data","type":"std_msgs/String"}),
+    );
+    assert!(receive(&mut rx).to_string().contains("denies"));
+    assert_eq!(bridge.backend.entities.len(), 3);
+}
+
+#[test]
+fn action_topics_cannot_bypass_topic_allowlists() {
+    let (mut bridge, mut rx) = restricted(&["topics_glob:=[]"]);
+    for op in ["send_action_goal", "advertise_action"] {
+        bridge.command(
+            1,
+            json!({"op":op,"action":"/move","type":"example_interfaces/Fibonacci"}),
+        );
+        assert!(receive(&mut rx).to_string().contains("denies"));
+        assert!(bridge.backend.entities.is_empty());
+    }
+}
+
+#[test]
+fn parameter_allowlist_blocks_raw_services_and_filters_names() {
+    let (mut bridge, mut rx) = restricted(&["params_glob:=['public_*']"]);
+    for (service, typ, args) in [
+        (
+            "/rosapi/get_param",
+            "rosapi_msgs/GetParam",
+            json!({"name":"/node:secret"}),
+        ),
+        (
+            "/node/get_parameters",
+            "rcl_interfaces/GetParameters",
+            json!({"names":["secret"]}),
+        ),
+        (
+            "/alias",
+            "rcl_interfaces/SetParameters",
+            json!({"parameters":[]}),
+        ),
+    ] {
+        bridge.command(
+            1,
+            json!({"op":"call_service","service":service,"type":typ,"args":args}),
+        );
+        assert_eq!(receive(&mut rx)["result"], false);
+        assert!(bridge.backend.entities.is_empty());
+    }
+    bridge.command(1, json!({"op":"call_service","service":"/rosapi/get_param_names","type":"rosapi_msgs/GetParamNames","args":{}}));
+    let entity = bridge.backend.entity("client");
+    bridge.backend.events.push(Event::Response {
+        entity,
+        sequence: 1,
+        values: json!({"names":["/node:secret","/node:public_rate"]}),
+    });
+    bridge.tick().unwrap();
+    assert_eq!(
+        receive(&mut rx)["values"]["names"],
+        json!(["/node:public_rate"])
+    );
+    bridge.command(1, json!({"op":"call_service","service":"/rosapi/get_param","type":"rosapi_msgs/GetParam","args":{"name":"/node:public_rate"}}));
+    assert_eq!(bridge.backend.entities.len(), 1);
+}

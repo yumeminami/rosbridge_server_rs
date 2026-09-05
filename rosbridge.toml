@@ -9,8 +9,8 @@
 # SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
 #
 
-# Optional settings. Explicit command-line flags override this file.
-# Start with: rosbridge_server_rs --config rosbridge.toml
+# Created and loaded at ~/.rosbridge_server_rs/rosbridge.toml on first startup.
+# Explicit command-line flags override this file; --config selects another file.
 address = "0.0.0.0"
 port = 9090
 url_path = "/"
@@ -23,9 +23,14 @@ default_call_service_timeout = 30.0
 fragment_timeout = 30.0
 params_timeout = 5.0
 
-# rosapi discovery filters; these are not protocol access-control rules.
-# topics_glob = ["/head_mount/*", "/diagnostics"]
-# params_glob = ["*"]
+# Forwarding allowlists. Omitted = unrestricted; [] = deny all.
+# topics_glob is ADDED to both directional lists.
+# For read-only monitoring, uncomment all five settings below.
+# topics_glob = []
+# topics_pub_glob = []
+# topics_sub_glob = ["/diagnostics", "/head_mount/imu", "/head_mount/button"]
+# services_glob = ["/rosapi/topics", "/rosapi/topics_and_raw_types", "/rosapi/topic_type", "/rosapi/message_details", "/rosapi/get_time", "/rosapi/get_ros_version"]
+# params_glob = []
 
 [log]
 level = "info"

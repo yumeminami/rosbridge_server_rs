@@ -80,18 +80,7 @@ struct Group {
     names: Vec<String>,
     deadline: Instant,
 }
-#[derive(Default)]
-struct Config {
-    pub_topics: Option<Vec<glob::Pattern>>,
-    sub_topics: Option<Vec<glob::Pattern>>,
-    services: Option<Vec<glob::Pattern>>,
-    params: Option<Vec<glob::Pattern>>,
-}
-fn matches(patterns: &Option<Vec<glob::Pattern>>, name: &str) -> bool {
-    patterns
-        .as_ref()
-        .is_none_or(|patterns| patterns.iter().any(|p| p.matches(name)))
-}
+use crate::access::{Access as Config, matches};
 fn text<'a>(v: &'a Value, key: &str) -> &'a str {
     v[key].as_str().unwrap_or("")
 }
@@ -109,20 +98,6 @@ impl Api {
                 );
             }
         }
-        let parse = |name: &str| -> Result<Option<Vec<glob::Pattern>>> {
-            let Some(value) = values.get(name).filter(|v| !v.is_empty()) else {
-                return Ok(None);
-            };
-            let value = value.trim_matches(['[', ']']);
-            Ok(Some(
-                value
-                    .split(',')
-                    .map(|s| s.trim().trim_matches(['\'', '"']))
-                    .filter(|s| !s.is_empty())
-                    .map(glob::Pattern::new)
-                    .collect::<std::result::Result<_, _>>()?,
-            ))
-        };
         api.parameter_timeout = Duration::try_from_secs_f64(
             values
                 .get("params_timeout")
@@ -134,20 +109,7 @@ impl Api {
             !api.parameter_timeout.is_zero(),
             "params_timeout must be positive"
         );
-        let legacy = parse("topics_glob")?;
-        let merge = |specific: Option<Vec<glob::Pattern>>| match specific {
-            None => legacy.clone(),
-            Some(mut p) => {
-                p.extend(legacy.clone().unwrap_or_default());
-                Some(p)
-            }
-        };
-        api.config = Config {
-            pub_topics: merge(parse("topics_pub_glob")?),
-            sub_topics: merge(parse("topics_sub_glob")?),
-            services: parse("services_glob")?,
-            params: parse("params_glob")?,
-        };
+        api.config = Config::from_ros_args(args)?;
         for &(name, typ) in SERVICES {
             let entity = ros.service(
                 &format!("/rosapi/{name}"),

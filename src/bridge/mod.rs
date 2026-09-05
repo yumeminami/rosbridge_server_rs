@@ -92,6 +92,7 @@ struct Service {
 }
 
 struct Call {
+    parameter_names: bool,
     owner: Connection,
     id: Option<String>,
     service: String,
@@ -156,6 +157,7 @@ enum ActionCall {
 
 pub struct Bridge<B: Backend> {
     pub backend: B,
+    pub access: crate::access::Access,
     outputs: HashMap<Connection, Output>,
     publishers: HashMap<String, Publisher>,
     subscriptions: HashMap<String, Subscription>,
@@ -204,6 +206,7 @@ impl<B: Backend> Bridge<B> {
     pub fn new(backend: B, timeout: Duration) -> Self {
         Self {
             backend,
+            access: crate::access::Access::default(),
             outputs: HashMap::new(),
             publishers: HashMap::new(),
             subscriptions: HashMap::new(),
@@ -302,6 +305,14 @@ impl<B: Backend> Bridge<B> {
     fn execute(&mut self, owner: Connection, v: &Value) -> Result<()> {
         id(v)?;
         match required(v, "op")? {
+            "advertise" | "publish" => self.access.topic(&name(v, "topic")?, true)?,
+            "subscribe" => self.access.topic(&name(v, "topic")?, false)?,
+            "call_service" | "advertise_service" => self.access.service(&name(v, "service")?)?,
+            "send_action_goal" => self.access.action(&name(v, "action")?, false)?,
+            "advertise_action" => self.access.action(&name(v, "action")?, true)?,
+            _ => {}
+        }
+        match required(v, "op")? {
             "advertise" => {
                 self.advertise(owner, v)?;
             }
@@ -354,8 +365,19 @@ impl<B: Backend> Bridge<B> {
         Ok(types[0].clone())
     }
 
-    fn response(&mut self, entity: Entity, sequence: i64, values: Value) -> Result<()> {
+    fn response(&mut self, entity: Entity, sequence: i64, mut values: Value) -> Result<()> {
         if let Some(call) = self.calls.remove(&(entity, sequence)) {
+            if call.parameter_names
+                && self.access.params.is_some()
+                && let Some(names) = values["names"].as_array_mut()
+            {
+                names.retain(|value| {
+                    value
+                        .as_str()
+                        .and_then(|full| full.split_once(':'))
+                        .is_some_and(|(_, name)| crate::access::matches(&self.access.params, name))
+                });
+            }
             let response = json!({
                 "op": "service_response",
                 "service": call.service,

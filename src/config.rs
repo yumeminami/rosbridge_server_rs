@@ -60,7 +60,30 @@ impl Default for Log {
     }
 }
 
+fn ensure_default_config(path: &std::path::Path) -> Result<()> {
+    use std::io::Write;
+    std::fs::create_dir_all(path.parent().context("config path has no parent")?)?;
+    match std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(path)
+    {
+        Ok(mut file) => file.write_all(include_bytes!("../rosbridge.toml"))?,
+        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {}
+        Err(error) => {
+            return Err(error).with_context(|| format!("create config {}", path.display()));
+        }
+    }
+    Ok(())
+}
+
 pub fn load(args: &mut Args, matches: &ArgMatches) -> Result<Log> {
+    if args.config.is_none() {
+        let home = std::env::var_os("HOME").context("HOME is unset; provide --config")?;
+        let path = std::path::PathBuf::from(home).join(".rosbridge_server_rs/rosbridge.toml");
+        ensure_default_config(&path)?;
+        args.config = Some(path);
+    }
     let config: Config = match &args.config {
         Some(path) => toml::from_str(
             &std::fs::read_to_string(path)
@@ -180,6 +203,20 @@ mod tests {
         std::fs::remove_file(path)?;
         result?;
         Ok(args)
+    }
+
+    #[test]
+    fn default_config_is_created_and_never_overwritten() {
+        let directory = std::env::temp_dir().join(format!("rosbridge-{}", uuid::Uuid::new_v4()));
+        let path = directory.join("rosbridge.toml");
+        ensure_default_config(&path).unwrap();
+        let text = std::fs::read_to_string(&path).unwrap();
+        let _: Config = toml::from_str(&text).unwrap();
+        assert_eq!(text, include_str!("../rosbridge.toml"));
+        std::fs::write(&path, "port = 8443").unwrap();
+        ensure_default_config(&path).unwrap();
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "port = 8443");
+        std::fs::remove_dir_all(directory).unwrap();
     }
 
     #[test]
