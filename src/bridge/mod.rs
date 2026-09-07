@@ -15,9 +15,10 @@ mod actions;
 mod services;
 mod topics;
 
+pub use crate::outgoing::Output;
 use crate::{
     backend::{Backend, Entity, Event, RosMessage, type_name},
-    wire::{self, Compression, Options},
+    wire::{Compression, Options},
 };
 use anyhow::{Context, Result, bail, ensure};
 use ciborium::Value as Cbor;
@@ -26,10 +27,7 @@ use std::{
     collections::{HashMap, HashSet, VecDeque},
     time::{Duration, Instant},
 };
-use tokio::sync::mpsc;
-use tokio_tungstenite::tungstenite::Message;
 pub type Connection = u64;
-pub type Output = mpsc::Sender<Vec<Message>>;
 struct Publisher {
     entity: Entity,
     typ: String,
@@ -246,17 +244,22 @@ impl<B: Backend> Bridge<B> {
         if let Some(id) = request_id {
             value["id"] = json!(id);
         }
+        if self.failed.contains(&owner) {
+            return;
+        }
         let key = self.unique();
-        match wire::encode(&value, binary, options, &key) {
-            Ok(frames) => {
-                if let Some(output) = self.outputs.get(&owner)
-                    && output.try_send(frames).is_err()
-                {
-                    self.failed.insert(owner);
-                }
-            }
-            Err(e) => {
-                tracing::warn!("encode response: {e}");
+        if let Some(output) = self.outputs.get(&owner) {
+            let operation = value["op"].as_str().unwrap_or("").to_owned();
+            let topic = (operation == "publish")
+                .then(|| value["topic"].as_str())
+                .flatten()
+                .map(str::to_owned);
+            let request = crate::encoding::Request::new(value, binary, options.clone(), key);
+            if let Err(error) =
+                output.send_request(owner, &operation, topic.as_deref(), options.queue, request)
+            {
+                tracing::warn!(connection = owner, ?error, "Outbound delivery failed");
+                self.failed.insert(owner);
             }
         }
     }
@@ -288,6 +291,10 @@ impl<B: Backend> Bridge<B> {
     }
 
     pub fn command(&mut self, owner: Connection, v: Value) {
+        // Commands already queued when a socket closes must not recreate ROS entities.
+        if !self.outputs.contains_key(&owner) {
+            return;
+        }
         let started = Instant::now();
         if let Err(e) = self.execute(owner, &v) {
             tracing::error!(

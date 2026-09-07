@@ -121,8 +121,8 @@ not a claim that every Python execution setting has identical semantics.
 | `url_path` | Supported; exact path matching, default `/`. |
 | `namespace` | Supported; also `--namespace`. |
 | `max_message_size` | Supported; retains Rust default 16 MiB, versus Python's 10,000,000 bytes. |
-| `incoming_queue_size` | Supported as the global bounded ROS command queue, default 256; not a separate queue per client. |
-| `write_queue_size` | Supported as per-client outbound batches, default 64; a batch may contain multiple frames. Slow clients are disconnected when full. |
+| `incoming_queue_size` | Per-connection pending command capacity, default 256; connections are served round-robin. |
+| `write_queue_size` | Supported as per-client queued topic batches, default 64; a batch may contain multiple frames. Topic congestion drops whole batches and preserves the connection. |
 | `default_call_service_timeout` | Supported via `service_timeout`; retains Rust default 30 seconds. Positive values only. |
 | `fragment_timeout` | Supported; retains Rust default 30 seconds. Expired assemblies are removed on the next received frame. |
 | `topics_glob`, `topics_pub_glob`, `topics_sub_glob` | Forwarding allowlists for advertisements, publications and subscriptions, also used by native rosapi discovery. |
@@ -130,7 +130,7 @@ not a claim that every Python execution setting has identical semantics.
 | `params_glob`, `params_timeout` | Parameter-name allowlist for native rosapi and WebSocket parameter calls; timeout defaults to 5 seconds. |
 | `ssl`, `certfile`, `keyfile` | Not accepted; terminate TLS in a reverse proxy. |
 | `use_compression` | Not accepted; WebSocket permessage-deflate is not implemented. Protocol CBOR/PNG remains supported. |
-| `websocket_ping_interval`, `websocket_ping_timeout` | Not accepted; incoming ping frames receive pong, but server-initiated heartbeat scheduling is not implemented. |
+| `websocket_ping_interval`, `websocket_ping_timeout` | Supported in seconds; both default to 30. Set interval to 0 to disable active probes. |
 | `delay_between_messages` | Not accepted; no artificial inter-message delay. |
 | `unregister_timeout` | Not accepted; cleanup is immediate. |
 | `retry_startup_delay` | Not accepted; bind failures return an error. |
@@ -201,3 +201,85 @@ Startup logs warn when enabled. They use the same console/file destinations and
 retention as other logs. INFO remains payload-free; restore it after debugging.
 Only accepted, forwarded service requests and responses are previewed, after
 parameter-name filtering on responses. Rejected requests do not emit previews.
+
+## Outbound congestion
+
+`write_queue_size` bounds queued topic batches per connection. Without a positive
+subscription `queue_length`, a full topic queue drops the incoming batch. With
+`queue_length > 0`, it also bounds queued batches for that topic and evicts that
+topic's oldest batches to make room for newer ones, including when `throttle_rate`
+is zero. Other topics are not evicted. If space still cannot be made, the incoming
+batch is dropped. This transport-level use of `queue_length` is a Rust extension;
+the existing subscription throttle queue remains separate. In-flight batches cannot
+be replaced. All rosbridge fragments of a message are queued or dropped together.
+
+Service requests/responses, action messages and status messages use a separate
+16-batch reserve, drained before the next topic batch. Exhausting this reserve
+closes the connection with WebSocket code 1013 and reason `control send queue full`,
+rather than silently losing a response while leaving the client waiting.
+
+`write_queue_bytes` (CLI `--write-queue-bytes`, default 67108864) limits estimated
+retained input bytes in **each** queue: up to 64 MiB of topic input plus 64 MiB of
+control input per client by default. Already encoded batches are charged by payload
+length. The encoded result of each job is separately checked against the same
+limit. A batch over either limit is dropped for topics or closes the connection
+for control messages. The input estimate includes JSON/CBOR values, containers
+and strings; it is not a total process-memory limit. Allocator overhead, codec
+temporaries, subscription buffers and in-flight batches are additional.
+
+Topic drops are counted per connection and logged at most once per second, with
+topic, operation, batch capacity and queued bytes. Closed receivers, control queue
+overflow, socket errors and write timeouts are reported separately. Reading and
+writing run concurrently, so a blocked data write does not block ordinary incoming
+commands. Each outgoing batch has a 10-second write deadline. Server-initiated
+closes attempt a Close frame and wait up to one second for the peer; peer Close
+frames are acknowledged. An already blocked or broken network can still prevent
+delivery of the Close frame.
+
+## Incoming fairness and heartbeats
+
+`incoming_queue_size` now bounds pending protocol commands **per connection**,
+not across the server. Each ready connection gets one command per turn, preserving
+FIFO order within that connection. The worker handles at most 64 commands before
+polling ROS events. A full client queue closes only that client (code 1013,
+`client incoming queue full`); commands are not silently dropped. Disconnect and
+shutdown notifications do not consume data capacity, and disconnect discards that
+client's backlog. This provides command-count fairness, not preemption of a slow
+individual operation. Total incoming capacity grows with the number of clients.
+
+Active heartbeats default to a 30-second interval and 30-second pong timeout.
+Configure `websocket_ping_interval` / `websocket_ping_timeout` in TOML, or
+`--websocket-ping-interval` / `--websocket-ping-timeout` on the command line.
+Interval 0 disables probes; the timeout must remain positive. The first ping is
+sent after the interval, and the next interval starts after a matching pong.
+Only a pong echoing the outstanding ping payload satisfies a probe; ordinary
+messages and unrelated pongs do not postpone the deadline. The pong deadline
+starts after the ping has been flushed, with a separate bounded ping-write wait.
+On timeout the server logs the reason, releases the connection's output receiver,
+and attempts a Close frame (1001, `WebSocket pong timed out`). Client-initiated
+pings are still answered when active heartbeats are disabled.
+
+## Outbound encoding workers
+
+JSON/CBOR serialization, PNG compression and rosbridge fragmentation run through
+Tokio blocking tasks with a shared concurrency limit. Set `encoding_workers`
+(default 2, accepted range 1–256), or CLI `--encoding-workers`. A task is spawned
+only after acquiring a permit. Connections waiting for capacity leave their
+requests in their existing bounded queues, so topic drops and oldest-first
+replacement happen before encoding. Each connection encodes at most one batch
+at a time and retains FIFO order within each lane; control traffic takes priority
+at batch boundaries. An already executing topic batch is not preempted.
+
+Disconnect discards pending requests and wakes pool waiters. A synchronous codec
+already running is allowed to finish, its result is discarded, and its permit is
+held until CPU work ends even if the socket task is canceled. Encoding failures
+are logged; control-message encoding failure closes with code 1011. An encoded
+control batch exceeding the byte limit closes with 1013. Topic failures are counted
+and logged at most once per second.
+
+Enable `rosbridge_server_rs::outgoing=debug` to observe `queue_wait_us`, `encode_us`,
+`input_bytes` and `output_bytes`. Native ROS message conversion (`msg.values()`),
+protocol dispatch, input-size estimation and fan-out remain on the ROS worker.
+This change does not introduce cross-client encoding caches. Actual latency and
+CPU improvements require profiling with the deployed message sizes and codecs.
+The [plan and review](outbound-encoding-plan.md) document the scope and tradeoffs.

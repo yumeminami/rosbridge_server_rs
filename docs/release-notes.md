@@ -1,76 +1,68 @@
-# rosbridge_server_rs 0.1.4
+# rosbridge_server_rs 0.1.5
 
-Improves log filenames, terminal readability and service logging controls.
+Improves slow-client handling, scheduling fairness and WebSocket liveness, and
+moves outbound protocol encoding off the shared ROS worker.
 
-- Active files use YYYYMMDDHHmm.logging; rotation and graceful shutdown archive
-  them as YYYYMMDDHHmm.log. Names and rotation follow the selected log timezone.
-- Same-minute restarts add a numeric suffix instead of overwriting logs.
-  Unfinished .logging files are preserved; max_files counts completed archives.
-- Terminal level colors return, with plain field names and no bold styling.
-  Redirected output and file logs remain uncolored.
-- TOML and CLI log directories expand ~ and ~/... against HOME.
-- Normal service calls and responses move to DEBUG. Timeouts remain WARN and
-  failures remain ERROR. Payload previews remain separately opt-in.
-- Humble / Ubuntu 22.04 and Jazzy / Ubuntu 24.04 packages for Linux x86_64 and ARM64.
+- Topic congestion drops whole batches while keeping the connection and
+  subscriptions. Positive queue_length enables oldest-first replacement per topic,
+  including with throttle_rate=0.
+- Service/action/status messages have reserved capacity. Control overload and
+  encoding failures close with explicit reasons rather than silently losing replies.
+- Per-client incoming queues are served round-robin; disconnect and shutdown
+  notifications do not compete for data capacity.
+- Active ping/pong probes detect unresponsive clients. Socket reads and writes
+  progress concurrently, with bounded writes and closing handshakes.
+- JSON/CBOR/PNG encoding and fragmentation run in bounded blocking jobs. Waiting
+  requests stay in bounded queues and can be discarded before encoding.
 
 ## Configuration upgrade
 
-First startup with v0.1.4 refreshes the managed
-~/.rosbridge_server_rs/rosbridge.toml with the bundled defaults.
-Same-version restarts preserve edits. To keep settings across upgrades, save
-another file and use --config /path/to/custom.toml; explicit files are not modified.
+The managed ~/.rosbridge_server_rs/rosbridge.toml is refreshed on first startup
+with a new version. Preserve custom settings in a separate --config file.
 
-Defaults are local time, terminal colors enabled, INFO level and no file output.
-Use a dedicated log directory. Older rosbridge_server_rs.log.* files are left in
-place and are not counted by the new timestamped archive retention.
-
-```bash
-rosbridge_server_rs --log-directory "$HOME/logs/rosbridge" --log-timezone local
+```toml
+incoming_queue_size = 256       # Now per connection, previously server-wide.
+write_queue_size = 64
+write_queue_bytes = 67108864    # Estimated queued input per lane; also caps output batch.
+encoding_workers = 2
+websocket_ping_interval = 30.0  # Set 0 to disable active probes.
+websocket_ping_timeout = 30.0
 ```
 
-Enable service call details without payloads:
+Total input capacity grows with the number of connections. Queue byte estimates
+are not an RSS limit: codec temporaries, subscription buffers and in-flight
+batches remain additional. Encoding concurrency is shared across connections;
+ROS message conversion remains on the ROS worker, and no cross-client encoding
+cache is introduced. Performance gains depend on the workload and are not yet
+quantified on real robots.
 
-```bash
-rosbridge_server_rs --log-level 'info,rosbridge_server_rs::service_calls=debug'
-```
+## Validation
 
-To also inspect request/response contents, enable
-rosbridge_server_rs::service_payload=debug. Previews are capped at 4096 UTF-8
-bytes, marked when truncated, and are not redacted. INFO logs contain neither
-normal service lifecycle entries nor payloads.
+61 local non-ROS tests passed, including queue saturation, ordering, cancellation,
+encoding compatibility and real local WebSocket heartbeat/close tests. Clippy
+passed with Humble doc-only bindings. The tag pipeline gates publication on native
+Humble/Jazzy checks, upstream compatibility and package/wheel smoke tests for both
+x86_64 and ARM64.
 
 ## Install
 
-With Humble or Jazzy installed, download the matching `.deb` and run:
+With ROS 2 Jazzy installed:
 
 ```bash
-sudo apt install ./rosbridge-server-rs_0.1.4_jazzy_ubuntu24.04_amd64.deb
+sudo apt install ./rosbridge-server-rs_0.1.5_jazzy_ubuntu24.04_amd64.deb
 source /opt/ros/jazzy/setup.bash
 rosbridge_server_rs
 ```
 
-Use `humble_ubuntu22.04` for Humble and `arm64` on ARM64. Connect to
-`ws://localhost:9090`.
-Source your workspace before starting if you use custom message packages.
-Archives require the same external ROS runtime libraries. `SHA256SUMS` covers
-all release packages.
+Use humble_ubuntu22.04 for Humble and arm64 on ARM64. Source custom message
+workspaces before starting. Archives require the same external ROS libraries.
+SHA256SUMS covers the release packages.
 
-Install from PyPI with
-`uv tool install rosbridge_server_rs==0.1.4`, then run `rosbridge_server_rs`, or use
-`uvx rosbridge_server_rs==0.1.4` directly. Source the ROS environment first. uv selects
-the architecture, and the launcher selects the binary using `$ROS_DISTRO`.
+```bash
+uv tool install rosbridge_server_rs==0.1.5
+# Or: uvx rosbridge_server_rs==0.1.5
+```
 
-To upgrade an existing uv tool, run `uv tool upgrade rosbridge_server_rs`.
-The default configuration is created when the server starts, not during wheel
-installation. Edit it and restart; explicit CLI flags override the file.
-
-## Scope
-
-This early release does not establish long-running production stability or
-complete compatibility with every Python rosbridge configuration. Use absolute
-ROS names. TLS and authentication require a reverse proxy. ROS distributions other
-than Humble and Jazzy, and native macOS/Windows, are not supported by these packages.
-
-CI gates release publication on formatting, protocol and ROS integration tests,
-upstream WebSocket compatibility, and package smoke tests for both
-distributions and architectures. See CHANGELOG.md and docs/usage.md for details.
+For an existing uv tool, use `uv tool upgrade rosbridge_server_rs`.
+This is an early prerelease; it does not establish long-running production
+stability or complete parity with every Python rosbridge configuration.

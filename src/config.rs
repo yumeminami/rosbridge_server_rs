@@ -29,7 +29,11 @@ struct Config {
     url_path: Option<String>,
     incoming_queue_size: Option<usize>,
     write_queue_size: Option<usize>,
+    write_queue_bytes: Option<usize>,
+    encoding_workers: Option<usize>,
     fragment_timeout: Option<f64>,
+    websocket_ping_interval: Option<f64>,
+    websocket_ping_timeout: Option<f64>,
     topics_glob: Option<Vec<String>>,
     topics_pub_glob: Option<Vec<String>>,
     topics_sub_glob: Option<Vec<String>>,
@@ -139,7 +143,28 @@ pub fn load(args: &mut Args, matches: &ArgMatches) -> Result<Log> {
     apply!(url_path, config.url_path);
     apply!(incoming_queue_size, config.incoming_queue_size);
     apply!(write_queue_size, config.write_queue_size);
+    apply!(write_queue_bytes, config.write_queue_bytes);
+    apply!(encoding_workers, config.encoding_workers);
+    ensure!(
+        args.encoding_workers > 0 && args.encoding_workers <= 256,
+        "encoding_workers must be between 1 and 256"
+    );
+    ensure!(
+        args.write_queue_bytes > 0,
+        "write_queue_bytes must be positive"
+    );
     apply!(fragment_timeout, config.fragment_timeout);
+    apply!(websocket_ping_interval, config.websocket_ping_interval);
+    apply!(websocket_ping_timeout, config.websocket_ping_timeout);
+    ensure!(
+        std::time::Duration::try_from_secs_f64(args.websocket_ping_interval).is_ok(),
+        "websocket_ping_interval must be finite, nonnegative and representable"
+    );
+    ensure!(
+        std::time::Duration::try_from_secs_f64(args.websocket_ping_timeout)
+            .is_ok_and(|d| !d.is_zero()),
+        "websocket_ping_timeout must be finite, positive and representable"
+    );
     ensure!(
         args.incoming_queue_size > 0 && args.write_queue_size > 0,
         "queue sizes must be positive"
@@ -290,10 +315,56 @@ mod tests {
         for text in [
             "ssl = true",
             "write_queue_size = 0",
+            "write_queue_bytes = 0",
+            "encoding_workers = 0",
+            "encoding_workers = 257",
+            "incoming_queue_size = 0",
+            "websocket_ping_interval = -1.0",
+            "websocket_ping_interval = nan",
+            "websocket_ping_interval = 1e100",
+            "websocket_ping_timeout = 0.0",
+            "websocket_ping_timeout = inf",
             "fragment_timeout = -1",
             "url_path = 'relative'",
         ] {
             assert!(configured(text, &[]).is_err(), "{text}");
         }
+    }
+    #[test]
+    fn heartbeat_settings_and_cli_precedence() {
+        let args = configured(
+            "websocket_ping_interval = 0.0\nwebsocket_ping_timeout = 5.0",
+            &[],
+        )
+        .unwrap();
+        assert_eq!(args.websocket_ping_interval, 0.0);
+        assert_eq!(args.websocket_ping_timeout, 5.0);
+        let args = configured(
+            "websocket_ping_interval = 0.0\nwebsocket_ping_timeout = 5.0",
+            &[
+                "--websocket-ping-interval",
+                "10",
+                "--websocket-ping-timeout",
+                "3",
+            ],
+        )
+        .unwrap();
+        assert_eq!(args.websocket_ping_interval, 10.0);
+        assert_eq!(args.websocket_ping_timeout, 3.0);
+    }
+    #[test]
+    fn encoding_worker_configuration_and_override() {
+        assert_eq!(
+            configured("encoding_workers = 3", &[])
+                .unwrap()
+                .encoding_workers,
+            3
+        );
+        assert_eq!(
+            configured("encoding_workers = 3", &["--encoding-workers", "1"])
+                .unwrap()
+                .encoding_workers,
+            1
+        );
     }
 }

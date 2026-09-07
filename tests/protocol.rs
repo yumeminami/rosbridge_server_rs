@@ -10,6 +10,7 @@
 //
 
 use anyhow::Result;
+use rosbridge_server_rs::outgoing as mpsc;
 use rosbridge_server_rs::{
     backend::*,
     bridge::Bridge,
@@ -20,7 +21,6 @@ use std::{
     collections::{BTreeMap, HashMap},
     time::Duration,
 };
-use tokio::sync::mpsc;
 use tokio_tungstenite::tungstenite::Message;
 
 #[derive(Default)]
@@ -122,14 +122,14 @@ impl Backend for TestRos {
     }
 }
 
-fn setup() -> (Bridge<TestRos>, mpsc::Receiver<Vec<Message>>) {
+fn setup() -> (Bridge<TestRos>, mpsc::Receiver) {
     let mut b = Bridge::new(TestRos::default(), Duration::from_secs(1));
     let (tx, rx) = mpsc::channel(64);
     b.connect(1, tx);
     (b, rx)
 }
 
-fn receive(rx: &mut mpsc::Receiver<Vec<Message>>) -> Value {
+fn receive(rx: &mut mpsc::Receiver) -> Value {
     let frames = rx.try_recv().unwrap();
     let Message::Text(text) = &frames[0] else {
         panic!("expected JSON")
@@ -282,9 +282,9 @@ fn client_cannot_spoof_other_clients_service_response() {
 }
 
 #[test]
-fn stalled_client_is_disconnected_and_entities_removed() {
+fn congested_topic_preserves_subscription_and_recovers() {
     let (mut b, _) = setup();
-    let (tx, _rx) = mpsc::channel(1);
+    let (tx, mut rx) = mpsc::channel(1);
     b.connect(1, tx);
     b.command(
         1,
@@ -293,7 +293,78 @@ fn stalled_client_is_disconnected_and_entities_removed() {
     b.backend.message(json!({"data":"one"}));
     b.backend.message(json!({"data":"two"}));
     b.tick().unwrap();
+    assert!(!b.backend.entities.is_empty());
+    assert_eq!(receive(&mut rx)["msg"]["data"], "one");
+    b.backend.message(json!({"data":"three"}));
+    b.tick().unwrap();
+    assert_eq!(receive(&mut rx)["msg"]["data"], "three");
+    drop(rx);
+    b.tick().unwrap();
     assert!(b.backend.entities.is_empty());
+}
+
+#[test]
+fn latest_topic_batches_and_service_responses_survive_congestion() {
+    let (mut b, _) = setup();
+    let (tx, mut rx) = mpsc::channel(1);
+    b.connect(1, tx);
+    let (tx, mut healthy) = mpsc::channel(8);
+    b.connect(2, tx);
+    for owner in [1, 2] {
+        b.command(
+            owner,
+            json!({"op":"subscribe", "topic":"/x", "type":"std_msgs/String",
+            "queue_length":1, "throttle_rate":0, "fragment_size":16}),
+        );
+    }
+    b.backend.message(json!({"data":"one"}));
+    b.tick().unwrap();
+    let first = healthy.try_recv().unwrap();
+    assert!(first.len() > 1);
+    b.backend.message(json!({"data":"two"}));
+    b.tick().unwrap();
+    assert!(!healthy.try_recv().unwrap().is_empty());
+    b.command(
+        1,
+        json!({"op":"call_service", "id":"call", "service":"/add",
+        "type":"example_interfaces/srv/AddTwoInts", "args":{"a":1,"b":2}}),
+    );
+    b.backend.events.push(Event::Response {
+        entity: b.backend.entity("client"),
+        sequence: 1,
+        values: json!({"sum":3}),
+    });
+    b.tick().unwrap();
+    let response = receive(&mut rx);
+    assert_eq!(response["op"], "service_response");
+    assert_eq!(response["id"], "call");
+    assert_eq!(response["values"]["sum"], 3);
+    let mut decoder = Decoder::default();
+    let mut decoded = None;
+    for frame in rx.try_recv().unwrap() {
+        if let Some(value) = decoder.decode(frame, 4096).unwrap() {
+            decoded = Some(value);
+        }
+    }
+    assert_eq!(decoded.unwrap()["msg"]["data"], "two");
+    assert!(rx.try_recv().is_err());
+    assert!(!b.backend.entities.is_empty());
+}
+
+#[test]
+fn control_overload_cleans_up_connection_entities() {
+    let (mut b, mut rx) = setup();
+    b.command(
+        1,
+        json!({"op":"subscribe", "topic":"/x", "type":"std_msgs/String"}),
+    );
+    for _ in 0..=mpsc::CONTROL_CAPACITY {
+        b.command(1, json!({"op":"invalid"}));
+    }
+    b.tick().unwrap();
+    assert!(b.backend.entities.is_empty());
+    assert!(rx.try_recv().is_err());
+    assert_eq!(rx.close_reason(), Some("control send queue full"));
 }
 
 #[test]
@@ -517,7 +588,7 @@ fn shared_subscription_uses_python_compression_precedence() {
     assert!(matches!(frames[0], Message::Text(_)));
 }
 
-fn restricted(settings: &[&str]) -> (Bridge<TestRos>, mpsc::Receiver<Vec<Message>>) {
+fn restricted(settings: &[&str]) -> (Bridge<TestRos>, mpsc::Receiver) {
     let (mut bridge, rx) = setup();
     let args: Vec<String> = settings
         .iter()
@@ -645,4 +716,15 @@ fn parameter_allowlist_blocks_raw_services_and_filters_names() {
     );
     bridge.command(1, json!({"op":"call_service","service":"/rosapi/get_param","type":"rosapi_msgs/GetParam","args":{"name":"/node:public_rate"}}));
     assert_eq!(bridge.backend.entities.len(), 1);
+}
+
+#[test]
+fn queued_commands_cannot_recreate_entities_after_disconnect() {
+    let (mut b, _rx) = setup();
+    b.disconnect(1);
+    b.command(
+        1,
+        json!({"op":"subscribe", "topic":"/x", "type":"std_msgs/String"}),
+    );
+    assert!(b.backend.entities.is_empty());
 }

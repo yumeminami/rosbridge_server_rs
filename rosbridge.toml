@@ -18,10 +18,18 @@ url_path = "/"
 node_name = "rosbridge_websocket"
 namespace = "/"
 max_message_size = 16777216
+# Pending commands per connection; served round-robin.
 incoming_queue_size = 256
 write_queue_size = 64
+# Estimated input bytes per topic/control queue; also caps each encoded batch.
+write_queue_bytes = 67108864
+# Concurrent encoding jobs shared across all connections.
+encoding_workers = 2
 default_call_service_timeout = 30.0
 fragment_timeout = 30.0
+# Active heartbeat; interval 0 disables probes. Values are in seconds.
+websocket_ping_interval = 30.0
+websocket_ping_timeout = 30.0
 params_timeout = 5.0
 
 # Forwarding allowlists. Omitted = unrestricted; [] = deny all.

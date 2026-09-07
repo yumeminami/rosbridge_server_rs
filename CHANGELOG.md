@@ -2,6 +2,23 @@
 
 Release history for rosbridge_server_rs.
 
+## 0.1.5 — 2026-09-07
+
+- Preserve topic subscriptions under outbound congestion; support whole-batch drops
+  and per-topic oldest-first replacement with positive queue_length.
+- Reserve capacity for service, action and status messages, with explicit overload
+  close reasons and bounded closing handshakes.
+- Schedule incoming commands fairly across per-client queues while preserving FIFO
+  order and protecting disconnect/shutdown notifications from data saturation.
+- Add active WebSocket ping/pong probes (30-second interval and timeout by default).
+- Move JSON/CBOR/PNG encoding and fragmentation into bounded blocking jobs, with two
+  concurrent jobs by default, input/output byte checks and encoding timing logs.
+- Keep read/write progress independent and discard queued work on disconnect.
+
+Compatibility changes: incoming_queue_size now applies per connection;
+websocket_ping_interval=0 disables active probes. write_queue_bytes now accounts
+for estimated retained input in each lane and also checks the encoded batch.
+
 ## 0.1.4 — 2026-09-06
 
 - Name active logs YYYYMMDDHHmm.logging and archive them as .log, using the selected timezone.
