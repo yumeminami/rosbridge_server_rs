@@ -244,6 +244,10 @@ impl<B: Backend> Bridge<B> {
         options: &Options,
     ) {
         let value = json!({"op":"publish","topic":topic,"msg":msg.json});
+        if !matches!(options.compression, Compression::Cbor | Compression::Raw) {
+            self.send(owner, value, &None, options, None);
+            return;
+        }
         let body = if options.compression == Compression::Raw {
             Cbor::Map(vec![
                 (Cbor::Text("bytes".into()), Cbor::Bytes(msg.raw)),

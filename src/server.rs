@@ -13,35 +13,49 @@
 
 use crate::Args;
 use anyhow::{Context, Result};
+use rosbridge_server_rs::incoming::{self, Command};
 use std::time::Duration;
 
 #[derive(Clone)]
 struct Sender {
-    channel: std::sync::mpsc::SyncSender<Command>,
+    channel: incoming::Sender,
     wake: rosbridge_server_rs::ros::Wake,
 }
 impl Sender {
     fn try_send(&self, command: Command) -> Result<()> {
-        self.channel.try_send(command)?;
+        match command {
+            Command::Connect(id, output) => self.channel.connect(id, output)?,
+            Command::Message(id, value) => self.channel.message(id, value)?,
+            Command::Disconnect(id) => self.channel.disconnect(id),
+            Command::Shutdown => self.channel.shutdown(),
+        }
         self.wake.trigger();
         Ok(())
     }
-    fn send(&self, command: Command) -> Result<()> {
-        self.channel.send(command)?;
-        self.wake.trigger();
-        Ok(())
+}
+// Cancellation and task aborts must also remove their scheduler entry.
+struct Registration {
+    sender: Sender,
+    id: u64,
+}
+impl Drop for Registration {
+    fn drop(&mut self) {
+        let _ = self.sender.try_send(Command::Disconnect(self.id));
     }
 }
 
-enum Command {
-    Connect(u64, rosbridge_server_rs::bridge::Output),
-    Message(u64, serde_json::Value),
-    Disconnect(u64),
-    Shutdown,
+struct ConnectionOptions {
+    max: usize,
+    write_queue: usize,
+    write_queue_bytes: usize,
+    fragment_timeout: Duration,
+    url_path: String,
+    timing: rosbridge_server_rs::websocket::Timing,
+    encoding_pool: rosbridge_server_rs::encoding::Pool,
 }
+
 pub(super) async fn run(args: Args) -> Result<()> {
     use rosbridge_server_rs::{bridge::Bridge, ros::Ros};
-    use std::sync::mpsc;
     use tokio::{net::TcpListener, task::JoinSet};
     let timeout =
         Duration::try_from_secs_f64(args.service_timeout).context("invalid service timeout")?;
@@ -50,12 +64,19 @@ pub(super) async fn run(args: Args) -> Result<()> {
         "max-message-size must be positive"
     );
     let access = rosbridge_server_rs::access::Access::from_ros_args(&args.ros_args)?;
-    let (sender, receiver) = mpsc::sync_channel(args.incoming_queue_size);
+    let (sender, receiver) = incoming::channel(args.incoming_queue_size);
     let (ready_tx, ready_rx) = tokio::sync::oneshot::channel();
     let max = args.max_message_size;
     let write_queue = args.write_queue_size;
+    let write_queue_bytes = args.write_queue_bytes;
     let fragment_timeout = Duration::from_secs_f64(args.fragment_timeout);
     let url_path = args.url_path.clone();
+    let encoding_pool = rosbridge_server_rs::encoding::Pool::new(args.encoding_workers);
+    let timing = rosbridge_server_rs::websocket::Timing {
+        ping_interval: Duration::try_from_secs_f64(args.websocket_ping_interval)?,
+        ping_timeout: Duration::try_from_secs_f64(args.websocket_ping_timeout)?,
+        ..Default::default()
+    };
     let worker = std::thread::Builder::new()
         .name("rosbridge-rcl".into())
         .spawn(move || -> Result<()> {
@@ -81,18 +102,17 @@ pub(super) async fn run(args: Args) -> Result<()> {
             bridge.access = access;
             let _ = ready_tx.send(Ok(bridge.backend.wake_handle()));
             loop {
-                let wait = bridge.next_wakeup();
+                let wait = if receiver.has_pending() {
+                    Duration::ZERO
+                } else {
+                    bridge.next_wakeup()
+                };
                 bridge.backend.wait(wait)?;
                 for index in 0..64 {
                     if index == 63 {
                         bridge.backend.wake_handle().trigger();
                     }
-                    let command = match receiver.try_recv() {
-                        Ok(command) => Some(command),
-                        Err(mpsc::TryRecvError::Empty) => None,
-                        Err(mpsc::TryRecvError::Disconnected) => Some(Command::Shutdown),
-                    };
-                    let Some(command) = command else {
+                    let Some(command) = receiver.try_recv() else {
                         break;
                     };
                     match command {
@@ -116,7 +136,7 @@ pub(super) async fn run(args: Args) -> Result<()> {
     let listener = match TcpListener::bind(args.bind).await {
         Ok(l) => l,
         Err(e) => {
-            let _ = sender.send(Command::Shutdown);
+            let _ = sender.try_send(Command::Shutdown);
             let _ = worker.join();
             return Err(e.into());
         }
@@ -133,8 +153,10 @@ pub(super) async fn run(args: Args) -> Result<()> {
                 next += 1;
                 let tx = sender.clone();
                 let url_path = url_path.clone();
+                let encoding_pool = encoding_pool.clone();
                 connections.spawn(async move {
-                    if let Err(e) = connection(stream, next, max, write_queue, fragment_timeout, url_path, tx).await {
+                    let options = ConnectionOptions { max, write_queue, write_queue_bytes, fragment_timeout, url_path, timing, encoding_pool };
+                    if let Err(e) = connection(stream, next, options, tx).await {
                         tracing::warn!(connection = next, %peer, "connection ended: {e:#}");
                     }
                 });
@@ -152,9 +174,16 @@ pub(super) async fn run(args: Args) -> Result<()> {
             }
         }
     }
-    connections.abort_all();
-    while connections.join_next().await.is_some() {}
-    let _ = sender.send(Command::Shutdown);
+    let _ = sender.try_send(Command::Shutdown);
+    if tokio::time::timeout(Duration::from_secs(12), async {
+        while connections.join_next().await.is_some() {}
+    })
+    .await
+    .is_err()
+    {
+        connections.abort_all();
+        while connections.join_next().await.is_some() {}
+    }
     worker
         .join()
         .map_err(|_| anyhow::anyhow!("ROS worker panicked"))??;
@@ -163,18 +192,21 @@ pub(super) async fn run(args: Args) -> Result<()> {
 async fn connection(
     stream: tokio::net::TcpStream,
     id: u64,
-    max: usize,
-    write_queue: usize,
-    fragment_timeout: Duration,
-    url_path: String,
+    options: ConnectionOptions,
     sender: Sender,
 ) -> Result<()> {
-    use futures_util::{SinkExt, StreamExt};
-    use rosbridge_server_rs::wire::Decoder;
+    let ConnectionOptions {
+        max,
+        write_queue,
+        write_queue_bytes,
+        fragment_timeout,
+        url_path,
+        timing,
+        encoding_pool,
+    } = options;
     use tokio_tungstenite::{
         accept_hdr_async_with_config,
         tungstenite::{
-            Message,
             handshake::server::{Request, Response},
             protocol::WebSocketConfig,
         },
@@ -221,60 +253,31 @@ async fn connection(
         ),
     )
     .await??;
-    let connected_at = std::time::Instant::now();
-    let (mut sink, mut source) = websocket.split();
-    let (out_tx, mut out_rx) = tokio::sync::mpsc::channel(write_queue);
-    sender.try_send(Command::Connect(id, out_tx))?;
-    let mut decoder = Decoder::with_timeout(fragment_timeout);
-    let mut close_code = None;
-    let mut close_reason = String::new();
-    let result = async {
-        loop {
-            tokio::select! {
-                frame = source.next() => match frame {
-                    Some(Ok(Message::Close(frame))) => {
-                        if let Some(frame) = frame {
-                            close_code = Some(u16::from(frame.code));
-                            close_reason = frame.reason.into_owned();
-                        }
-                        break;
-                    }
-                    None => break,
-                    Some(Ok(Message::Ping(value))) => {
-                        tokio::time::timeout(Duration::from_secs(10), sink.send(Message::Pong(value))).await??;
-                    }
-                    Some(Ok(frame)) => match decoder.decode(frame, max) {
-                        Ok(Some(value)) => sender.try_send(Command::Message(id, value))?,
-                        Ok(None) => {},
-                        Err(e) => {
-                            let error = serde_json::json!({"op":"status", "level":"error", "msg":e.to_string()});
-                            tokio::time::timeout(Duration::from_secs(10), sink.send(Message::Text(error.to_string()))).await??;
-                        }
-                    },
-                    Some(Err(e)) => return Err(anyhow::Error::from(e)),
-                },
-                frames = out_rx.recv() => match frames {
-                    Some(frames) => {
-                        for frame in frames {
-                            tokio::time::timeout(Duration::from_secs(10), sink.send(frame)).await??;
-                        }
-                    }
-                    None => break,
-                },
-            }
-        }
-        Ok(())
-    }.await;
-    tracing::info!(
-        connection = id,
-        %peer,
-        duration_seconds = connected_at.elapsed().as_secs_f64(),
-        ?close_code,
-        %close_reason,
-        "WebSocket session ended"
+    let (out_tx, out_rx) = rosbridge_server_rs::outgoing::channel_with_pool(
+        write_queue,
+        write_queue_bytes,
+        encoding_pool,
     );
-    // Closing the receiver also lets the ROS worker detect disconnect if its queue is full.
-    drop(out_rx);
+    let registration = sender.try_send(Command::Connect(id, out_tx));
+    if let Err(error) = &registration {
+        tracing::warn!(connection = id, %error, "ROS connection command queue unavailable");
+    }
+    let _registration_guard = Registration {
+        sender: sender.clone(),
+        id,
+    };
+    // A rejected registration drops Output; run still performs a closing handshake.
+    let result = rosbridge_server_rs::websocket::run_with_timing(
+        websocket,
+        id,
+        max,
+        fragment_timeout,
+        out_rx,
+        |value| sender.try_send(Command::Message(id, value)),
+        timing,
+    )
+    .await;
+    // The receiver is closed even if the command queue is full; tick also reaps it.
     let _ = sender.try_send(Command::Disconnect(id));
-    result
+    result.and(registration)
 }

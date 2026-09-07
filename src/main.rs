@@ -38,12 +38,25 @@ struct Args {
     log_ansi: Option<bool>,
     #[arg(long, default_value = "/")]
     url_path: String,
+    /// Maximum pending protocol commands per connection.
     #[arg(long, default_value_t = 256)]
     incoming_queue_size: usize,
     #[arg(long, default_value_t = 64)]
     write_queue_size: usize,
+    /// Estimated input bytes per topic/control queue and maximum encoded batch bytes.
+    #[arg(long, default_value_t = 67108864)]
+    write_queue_bytes: usize,
+    /// Maximum concurrent outbound encoding jobs across all connections.
+    #[arg(long, default_value_t = 2)]
+    encoding_workers: usize,
     #[arg(long, default_value_t = 30.0)]
     fragment_timeout: f64,
+    /// Seconds between active WebSocket probes; zero disables heartbeats.
+    #[arg(long, default_value_t = 30.0)]
+    websocket_ping_interval: f64,
+    /// Seconds to wait for a matching pong after sending a ping.
+    #[arg(long, default_value_t = 30.0)]
+    websocket_ping_timeout: f64,
     #[arg(long, default_value = "0.0.0.0:9090")]
     bind: SocketAddr,
     #[arg(long, default_value = "rosbridge_websocket")]

@@ -15,3 +15,10 @@ pub mod bridge;
 #[cfg(feature = "ros2")]
 pub mod ros;
 pub mod wire;
+
+pub mod outgoing;
+pub mod websocket;
+
+pub mod incoming;
+
+pub mod encoding;
