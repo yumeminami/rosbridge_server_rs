@@ -31,7 +31,8 @@ import websockets
     ],
 )
 @pytest.mark.parametrize("directory_source", ["cli", "toml"])
-def test_config_and_file_logs(tmp_path, log_level, directory_source):
+@pytest.mark.parametrize("shutdown_signal", [signal.SIGINT, signal.SIGTERM])
+def test_config_and_file_logs(tmp_path, log_level, directory_source, shutdown_signal):
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
         port = sock.getsockname()[1]
@@ -139,7 +140,7 @@ def test_config_and_file_logs(tmp_path, log_level, directory_source):
         asyncio.run(exercise())
         time.sleep(0.1)
     finally:
-        process.send_signal(signal.SIGINT)
+        process.send_signal(shutdown_signal)
         stdout, stderr = process.communicate(timeout=10)
     assert process.returncode == 0, stderr.decode()
     assert config.read_bytes() == original_config

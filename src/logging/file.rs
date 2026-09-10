@@ -12,7 +12,7 @@
 //! Timestamped active files and completed archives for the background log writer.
 
 use crate::config::Timezone;
-use chrono::{DateTime, FixedOffset, Local, Utc};
+use chrono::{DateTime, FixedOffset, Local, Timelike, Utc};
 use std::{
     fs::{self, File, OpenOptions},
     io::{self, Write},
@@ -21,6 +21,7 @@ use std::{
 
 #[derive(Clone, Copy)]
 pub(super) enum Rotation {
+    TwentyMinutes,
     Daily,
     Hourly,
     Never,
@@ -47,6 +48,7 @@ fn now(timezone: Timezone) -> DateTime<FixedOffset> {
 impl Rotation {
     fn period(self, time: DateTime<FixedOffset>) -> String {
         match self {
+            Self::TwentyMinutes => format!("{}-{}", time.format("%Y%m%d%H%z"), time.minute() / 20),
             Self::Daily => time.format("%Y%m%d").to_string(),
             Self::Hourly => time.format("%Y%m%d%H%z").to_string(),
             Self::Never => String::new(),
@@ -195,6 +197,41 @@ impl Drop for LogFile {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn twenty_minute_boundaries_and_normal_drop_archive() {
+        let directory =
+            std::env::temp_dir().join(format!("rosbridge-log-{}", uuid::Uuid::new_v4()));
+        let start = DateTime::parse_from_rfc3339("2026-09-06T23:01:00+08:00").unwrap();
+        let mut log = LogFile::at(
+            &directory,
+            Rotation::TwentyMinutes,
+            Timezone::Local,
+            7,
+            start,
+        )
+        .unwrap();
+        for (before, boundary) in [(18, 19), (38, 39), (58, 59)] {
+            let previous = log.path.clone();
+            log.file.write_all(b"retained").unwrap();
+            log.rotate(start + chrono::Duration::minutes(before) + chrono::Duration::seconds(59))
+                .unwrap();
+            assert_eq!(log.path, previous);
+            log.rotate(start + chrono::Duration::minutes(boundary))
+                .unwrap();
+            assert!(!previous.exists());
+            assert_eq!(
+                fs::read(previous.with_extension("log")).unwrap(),
+                b"retained"
+            );
+        }
+        let final_path = log.path.clone();
+        assert_eq!(final_path.file_name().unwrap(), "202609070000.logging");
+        drop(log);
+        assert!(!final_path.exists());
+        assert!(final_path.with_extension("log").exists());
+        fs::remove_dir_all(directory).unwrap();
+    }
 
     #[test]
     fn rotation_archives_and_restart_does_not_overwrite() {

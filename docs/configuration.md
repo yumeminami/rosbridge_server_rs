@@ -65,7 +65,7 @@ log timezone for rotation and filenames as described below.
 level = "info"
 console = true
 directory = "/var/log/rosbridge"
-rotation = "daily"
+rotation = "20min"
 max_files = 7
 ```
 
@@ -78,8 +78,9 @@ time in `log.timezone`. Rotation or graceful shutdown closes it as
 202609060300.logging
 ```
 
-`daily`/`hourly` rotate on the first write after the corresponding calendar
-boundary in the selected timezone; `never` keeps one file for that process run.
+`20min` (default) rotates at minute 00, 20 and 40 of each hour, on the first
+write after the boundary. `daily`/`hourly` rotate on the first write after the
+corresponding calendar boundary in the selected timezone; `never` keeps one file for that process run.
 Each restart opens a new file. If a timestamp already exists, `-1`, `-2`, etc.
 are appended rather than overwriting it. Abnormal termination may leave
 `.logging` files; they are preserved, not reused or pruned.
@@ -87,7 +88,8 @@ are appended rather than overwriting it. Abnormal termination may leave
 `max_files` retains that many completed timestamped `.log` archives, in addition
 to active/unfinished files. It is not a size limit. Use a dedicated log directory;
 retention ignores unrelated filenames, including the old `rosbridge_server_rs.log.*`
-format. The writer drains and finalizes on graceful shutdown. Its default lossy
+format. The writer drains and finalizes on graceful shutdown, including SIGINT (Ctrl+C)
+and SIGTERM (service stop). SIGKILL and power loss cannot run this cleanup. Its default lossy
 queue can drop lines if disk writes cannot keep up. Console output goes to stderr.
 Ensure the directory is writable; in Docker, use a bind mount to preserve logs.
 
@@ -283,3 +285,6 @@ protocol dispatch, input-size estimation and fan-out remain on the ROS worker.
 This change does not introduce cross-client encoding caches. Actual latency and
 CPU improvements require profiling with the deployed message sizes and codecs.
 The [plan and review](outbound-encoding-plan.md) document the scope and tradeoffs.
+
+Existing configuration files that explicitly set `rotation = "daily"` keep that
+setting; change it to `rotation = "20min"` to use twenty-minute rotation.

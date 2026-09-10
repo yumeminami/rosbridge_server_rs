@@ -67,7 +67,7 @@ impl Default for Log {
         Self {
             level: "info".into(),
             directory: None,
-            rotation: "daily".into(),
+            rotation: "20min".into(),
             max_files: 7,
             console: true,
             timezone: Timezone::Local,

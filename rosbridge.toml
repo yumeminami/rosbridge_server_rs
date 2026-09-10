@@ -48,5 +48,5 @@ ansi = true
 console = true
 # Uncomment to also write logs to disk. Paths are relative to the working directory.
 # directory = "logs"
-rotation = "daily"
+rotation = "20min"
 max_files = 7

@@ -80,10 +80,11 @@ pub fn init(config: &Log) -> Result<Option<Guard>> {
         "enable console logging or set log.directory"
     );
     let rotation = match config.rotation.as_str() {
+        "20min" => Rotation::TwentyMinutes,
         "daily" => Rotation::Daily,
         "hourly" => Rotation::Hourly,
         "never" => Rotation::Never,
-        _ => bail!("log.rotation must be daily, hourly or never"),
+        _ => bail!("log.rotation must be 20min, daily, hourly or never"),
     };
     ensure!(config.max_files > 0, "log.max_files must be positive");
     let (file, guard) = if let Some(directory) = &config.directory {

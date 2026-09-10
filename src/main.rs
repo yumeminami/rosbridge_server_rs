@@ -13,6 +13,8 @@ use anyhow::Result;
 use clap::{CommandFactory, FromArgMatches, Parser};
 mod config;
 mod logging;
+#[cfg(any(feature = "ros2", test))]
+mod shutdown;
 use std::net::SocketAddr;
 
 #[cfg(feature = "ros2")]

@@ -57,6 +57,7 @@ struct ConnectionOptions {
 pub(super) async fn run(args: Args) -> Result<()> {
     use rosbridge_server_rs::{bridge::Bridge, ros::Ros};
     use tokio::{net::TcpListener, task::JoinSet};
+    let mut shutdown = crate::shutdown::Signals::new()?;
     let timeout =
         Duration::try_from_secs_f64(args.service_timeout).context("invalid service timeout")?;
     anyhow::ensure!(
@@ -142,8 +143,6 @@ pub(super) async fn run(args: Args) -> Result<()> {
         }
     };
     tracing::info!(address=%listener.local_addr()?,"rosbridge WebSocket server listening");
-    let shutdown = tokio::signal::ctrl_c();
-    tokio::pin!(shutdown);
     let mut connections = JoinSet::new();
     let mut next = 0;
     loop {
@@ -161,7 +160,10 @@ pub(super) async fn run(args: Args) -> Result<()> {
                     }
                 });
             }
-            _ = &mut shutdown => break,
+            _ = shutdown.recv() => {
+                tracing::info!("Shutdown signal received");
+                break;
+            },
             Some(result) = connections.join_next(), if !connections.is_empty() => {
                 if let Err(e) = result {
                     tracing::warn!("connection task failed: {e}");
